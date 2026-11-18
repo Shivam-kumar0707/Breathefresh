@@ -10,19 +10,14 @@ interface MemberCardProps {
   conditions: string[];
 }
 
-export const MemberCard: React.FC<MemberCardProps> = ({
-  exposure,
-  tips,
-  ageGroup,
-  conditions,
-}) => {
+export const MemberCard: React.FC<MemberCardProps> = ({ exposure, tips, ageGroup, conditions }) => {
   const [showInfo, setShowInfo] = useState(false);
 
   const bandColors = {
-    low: { bg: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
-    moderate: { bg: 'bg-amber-100 text-amber-800 border-amber-300' },
-    high: { bg: 'bg-orange-100 text-orange-800 border-orange-300' },
-    severe: { bg: 'bg-purple-100 text-purple-900 border-purple-300' },
+    low: { bg: 'bg-emerald-100 text-emerald-950 border-emerald-400' },
+    moderate: { bg: 'bg-amber-100 text-amber-950 border-amber-400' },
+    high: { bg: 'bg-orange-100 text-orange-950 border-orange-400' },
+    severe: { bg: 'bg-purple-100 text-purple-950 border-purple-400' },
   };
 
   return (
@@ -31,10 +26,8 @@ export const MemberCard: React.FC<MemberCardProps> = ({
       <div className="flex items-start justify-between gap-2">
         <div>
           <div className="flex items-center gap-2">
-            <h4 className="font-bold text-slate-900 text-sm sm:text-base">
-              {exposure.name}
-            </h4>
-            <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 capitalize">
+            <h3 className="font-bold text-slate-900 text-sm sm:text-base">{exposure.name}</h3>
+            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 capitalize">
               {ageGroup}
             </span>
           </div>
@@ -43,7 +36,7 @@ export const MemberCard: React.FC<MemberCardProps> = ({
               {conditions.map((c) => (
                 <span
                   key={c}
-                  className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-rose-50 text-rose-700 border border-rose-200"
+                  className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-50 text-rose-800 border border-rose-300"
                 >
                   {c === 'asthma_copd' ? 'Asthma / COPD' : c}
                 </span>
@@ -67,8 +60,7 @@ export const MemberCard: React.FC<MemberCardProps> = ({
         <div className="p-2.5 bg-slate-50 rounded-lg">
           <span className="text-[11px] text-slate-500 block">Personal Cig-Equiv</span>
           <span className="text-xl font-extrabold text-slate-800">
-            {exposure.cigEq}{' '}
-            <span className="text-xs font-normal text-slate-500">cigs/day</span>
+            {exposure.cigEq} <span className="text-xs font-normal text-slate-500">cigs/day</span>
           </span>
         </div>
         <div className="p-2.5 bg-slate-50 rounded-lg relative">
@@ -83,9 +75,7 @@ export const MemberCard: React.FC<MemberCardProps> = ({
               <InfoIcon className="w-3.5 h-3.5" />
             </button>
           </div>
-          <span className="text-xl font-extrabold text-teal-700">
-            {exposure.riskScore}
-          </span>
+          <span className="text-xl font-extrabold text-teal-700">{exposure.riskScore}</span>
         </div>
       </div>
 
@@ -97,10 +87,12 @@ export const MemberCard: React.FC<MemberCardProps> = ({
             Exposure Index (EI): <strong>{exposure.ei} µg/m³</strong>.
           </p>
           <p>
-            Cigarette equivalence: {exposure.ei} ÷ 22 ≈ <strong>{exposure.cigEq}</strong> cigs/day (Berkeley Earth heuristic).
+            Cigarette equivalence: {exposure.ei} ÷ 22 ≈ <strong>{exposure.cigEq}</strong> cigs/day
+            (Berkeley Earth heuristic).
           </p>
           <p>
-            Vulnerability multiplier applied for {ageGroup}{conditions.length ? ` + ${conditions.join(', ')}` : ''}.
+            Vulnerability multiplier applied for {ageGroup}
+            {conditions.length ? ` + ${conditions.join(', ')}` : ''}.
           </p>
         </div>
       )}
@@ -115,7 +107,10 @@ export const MemberCard: React.FC<MemberCardProps> = ({
             </div>
           ))}
           {tips.avoid.map((item, idx) => (
-            <div key={`avoid-${idx}`} className="flex items-start gap-1.5 text-rose-700 font-medium">
+            <div
+              key={`avoid-${idx}`}
+              className="flex items-start gap-1.5 text-rose-700 font-medium"
+            >
               <span className="text-rose-500 font-bold">✕</span>
               <span>Avoid: {item}</span>
             </div>

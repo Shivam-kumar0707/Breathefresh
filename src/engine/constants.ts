@@ -15,7 +15,7 @@ export const BREATHING = {
 export const MASK = {
   none: 0,
   surgical: 0.2, // ~20% filtration efficiency due to edge leakage
-  n95: 0.8,      // Lab ~95% x real-world fit factor (~80% effective)
+  n95: 0.8, // Lab ~95% x real-world fit factor (~80% effective)
 } as const;
 
 export const COMMUTE_FACTOR = {
@@ -25,20 +25,20 @@ export const COMMUTE_FACTOR = {
   auto: 1.2,
   e_rickshaw: 1.2,
   car_open: 1.0,
-  car_ac: 0.6,      // cabin filter + recirculation
+  car_ac: 0.6, // cabin filter + recirculation
   bus: 1.1,
-  metro: 0.5,       // underground/filtered stations & AC coaches
+  metro: 0.5, // underground/filtered stations & AC coaches
 } as const;
 
 export const ACH = {
-  closed: 0.5,            // standard modern closed room
-  sealed: 0.35,           // weather-stripped / taped windows & door sweep
-  ventilate_window: 1.5,  // cracked window / deliberate short ventilation
-  open: 3.0,              // fully open windows / cross-ventilation
+  closed: 0.5, // standard modern closed room
+  sealed: 0.35, // weather-stripped / taped windows & door sweep
+  ventilate_window: 1.5, // cracked window / deliberate short ventilation
+  open: 3.0, // fully open windows / cross-ventilation
 } as const;
 
 export const PENETRATION = 0.8; // Fraction of outdoor PM2.5 entering through envelope
-export const DEPOSITION = 0.2;  // Gravitational settling & surface deposition rate per hour
+export const DEPOSITION = 0.2; // Gravitational settling & surface deposition rate per hour
 
 export const SOURCE_ADD = {
   cooking_no_hood: 25,

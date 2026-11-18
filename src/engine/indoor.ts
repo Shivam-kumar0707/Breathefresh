@@ -32,9 +32,14 @@ export interface IndoorHourParams {
 }
 
 /**
- * Computes steady-state indoor PM2.5 concentration for a single hour.
- * C_in = (PENETRATION * a * C_out) / (a + DEPOSITION + CADR / V) + sourceAdd
- * Clamped to at least 0.05 * C_out.
+ * Computes steady-state indoor PM2.5 concentration for a single hour using mass balance principles.
+ * Equation:
+ *   C_in = (PENETRATION * a * C_out) / (a + DEPOSITION + CADR / V) + sourceAdd
+ * Physics safeguards:
+ *   Clamped to at least 0.05 * C_out (5% physical bypass floor).
+ *
+ * @param params - Physical room, air change, purifier CADR, and source parameters.
+ * @returns Steady-state indoor PM2.5 concentration in µg/m³.
  */
 export function computeIndoorHour(params: IndoorHourParams): number {
   const {
@@ -63,7 +68,8 @@ export function computeIndoorHour(params: IndoorHourParams): number {
 
   // Mass balance steady-state
   const denom = a + DEPOSITION + activeCadr / volume;
-  const cInRaw = denom > 0 ? (PENETRATION * a * outdoorPm25) / denom + sourceAdd : outdoorPm25 + sourceAdd;
+  const cInRaw =
+    denom > 0 ? (PENETRATION * a * outdoorPm25) / denom + sourceAdd : outdoorPm25 + sourceAdd;
 
   // Physical clamp: even best purifiers have edge bypass
   const minFloor = MIN_INDOOR_FRACTION * outdoorPm25;
@@ -73,20 +79,26 @@ export function computeIndoorHour(params: IndoorHourParams): number {
 }
 
 /**
- * Computes a 24-hour indoor PM2.5 profile from outdoor hourly concentrations and home attributes.
+ * Computes a 24-hour indoor PM2.5 concentration profile across all hours.
+ * Evaluates individual hourly purifier schedules, window ventilation events, and indoor combustion sources.
+ *
+ * @param outdoorHourly - 24-element array of ambient outdoor PM2.5 levels.
+ * @param home - Home characteristics including room volume, window state, purifier schedule, and active sources.
+ * @returns 24-element array of modeled indoor hourly concentrations (µg/m³).
  */
 export function computeIndoorProfile(outdoorHourly: number[], home: Home): number[] {
   const result: number[] = [];
+  const hourly = outdoorHourly || [];
 
   for (let h = 0; h < 24; h++) {
-    const cOut = outdoorHourly[h] ?? 0;
+    const cOut = hourly[h] ?? 0;
     const isVentilating = home.ventilationHours?.includes(h) ?? false;
     const isPurifierActive = home.purifier ? home.purifier.hours.includes(h) : false;
     const cadr = home.purifier?.cadrM3h ?? 0;
 
     // Calculate source contributions active in this hour
     let sourceAdd = 0;
-    for (const [sourceKey, activeHours] of Object.entries(home.sources)) {
+    for (const [sourceKey, activeHours] of Object.entries(home.sources || {})) {
       if (activeHours && activeHours.includes(h)) {
         sourceAdd += SOURCE_ADD[sourceKey as keyof typeof SOURCE_ADD] ?? 0;
       }

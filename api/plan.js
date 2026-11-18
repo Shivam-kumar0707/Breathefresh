@@ -63,6 +63,15 @@ var PlanInputSchema = z.object({
         .max(25),
     grapStage: z.string().max(30).optional(),
 });
+/**
+ * Serverless API handler for /api/plan.
+ * Receives validated family air context and engine-computed action impacts, calls Groq (Qwen 3.8 / 27B)
+ * with strict temperature and JSON mode, validates the response against PlanOutputSchema,
+ * and falls back safely to signal fallback if Groq is unreachable, times out, or fails schema validation.
+ *
+ * @param req - Incoming HTTP request.
+ * @param res - Outgoing server response.
+ */
 export default function handler(req, res) {
     return __awaiter(this, void 0, void 0, function () {
         var clientIp, rateCheck, bodyData, parsedInput, input, systemPrompt, userContent, groqRes, groqJson, rawContent, parsedJson, validatedPlan, err_1;
@@ -91,7 +100,10 @@ export default function handler(req, res) {
                         res.statusCode = 429;
                         res.setHeader('Content-Type', 'application/json');
                         res.setHeader('Retry-After', String(rateCheck.resetInSec));
-                        res.end(JSON.stringify({ error: 'Too many requests. Please wait a moment.', retryAfter: rateCheck.resetInSec }));
+                        res.end(JSON.stringify({
+                            error: 'Too many requests. Please wait a moment.',
+                            retryAfter: rateCheck.resetInSec,
+                        }));
                         return [2 /*return*/];
                     }
                     bodyData = req.body;

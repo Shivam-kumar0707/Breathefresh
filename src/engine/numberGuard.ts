@@ -19,7 +19,11 @@ export interface NumberGuardContext {
 }
 
 /**
- * Builds the set of permitted numbers from verified engine outputs.
+ * Builds the strict set of permitted numeric values derived directly from verified engine calculations.
+ * Whitelists clock hours (0..24), standard counts, rounding variants, and exact deltas.
+ *
+ * @param ctx - Context containing engine-calculated values (AQI, PM2.5, cigarette equivalents, action deltas).
+ * @returns Set of permitted numbers and their legitimate rounding representations.
  */
 export function buildAllowedNumbers(ctx: NumberGuardContext): Set<number> {
   const allowed = new Set<number>();
@@ -67,7 +71,10 @@ export function buildAllowedNumbers(ctx: NumberGuardContext): Set<number> {
 }
 
 /**
- * Extracts all numeric values from a given text string.
+ * Extracts all integers and floating-point numeric tokens from a given text string.
+ *
+ * @param text - Input string to scan.
+ * @returns Array of parsed numbers present in the text.
  */
 export function extractNumbers(text: string): number[] {
   // Matches integer and floating point numbers (e.g., 22, 14.5, 3.0)
@@ -77,8 +84,12 @@ export function extractNumbers(text: string): number[] {
 }
 
 /**
- * Validates text against the allowed numbers set.
- * Returns valid: true if all numbers are authorized, else false with offending numbers.
+ * Validates text against the allowed numbers set derived from the Impact Engine.
+ * Returns valid: true if every numeric token in the text is in the allowed set, otherwise reports offending numbers.
+ *
+ * @param text - Input string to validate.
+ * @param allowedNumbers - Set of authorized numeric values.
+ * @returns Object with valid flag and list of unverified/hallucinated numbers.
  */
 export function validateTextNumbers(
   text: string,
@@ -110,7 +121,12 @@ export function validateTextNumbers(
 }
 
 /**
- * Strips sentences with unverified numbers or replaces them with an authoritative fallback.
+ * Sanitizes LLM text output by replacing any sentence containing unverified or hallucinated numbers with a trusted engine fallback phrase.
+ *
+ * @param text - The raw text received from an LLM call.
+ * @param allowedNumbers - The strict set of numbers authorized by the engine.
+ * @param fallbackReplacement - The replacement string to substitute for unverified sentences.
+ * @returns Sanitized text guaranteed to contain only engine-approved numeric claims.
  */
 export function sanitizeTextWithNumberGuard(
   text: string,

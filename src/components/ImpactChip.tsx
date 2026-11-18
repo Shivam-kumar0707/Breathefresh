@@ -36,7 +36,8 @@ export const ImpactChip: React.FC<ImpactChipProps> = ({
       </span>
       {deltaCigEq !== undefined && deltaCigEq !== 0 && (
         <span className="px-2 py-0.5 text-xs font-semibold rounded-md border bg-teal-50 text-teal-800 border-teal-200">
-          {deltaCigEq < 0 ? '-' : '+'}{Math.abs(deltaCigEq)} cigs/day
+          {deltaCigEq < 0 ? '-' : '+'}
+          {Math.abs(deltaCigEq)} cigs/day
         </span>
       )}
       {costTier && (

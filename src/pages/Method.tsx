@@ -39,7 +39,9 @@ export const Method: React.FC = () => {
           {STRINGS.app.notMedicalAdvice}
         </p>
         <p className="text-xs text-amber-800">
-          Always consult licensed medical practitioners for persistent respiratory discomfort, cough, or underlying cardiopulmonary conditions. If you experience severe symptoms such as chest tightness or acute shortness of breath, seek emergency medical care immediately.
+          Always consult licensed medical practitioners for persistent respiratory discomfort,
+          cough, or underlying cardiopulmonary conditions. If you experience severe symptoms such as
+          chest tightness or acute shortness of breath, seek emergency medical care immediately.
         </p>
       </section>
 
@@ -47,9 +49,7 @@ export const Method: React.FC = () => {
       <section className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-3">
         <div className="flex items-center gap-2">
           <SparklesIcon className="w-5 h-5 text-teal-600" />
-          <h2 className="text-lg font-bold text-slate-900">
-            {STRINGS.method.numberGuardTitle}
-          </h2>
+          <h2 className="text-lg font-bold text-slate-900">{STRINGS.method.numberGuardTitle}</h2>
         </div>
         <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
           {STRINGS.method.numberGuardDesc}
@@ -59,9 +59,16 @@ export const Method: React.FC = () => {
             <strong>Enforcement Pipeline:</strong>
           </p>
           <p>1. Engine computes verified metrics (AQI, PM2.5, CigEq, Action Deltas).</p>
-          <p>2. Allowed number set constructed: allowedNumbers = Set[...engineValues, hours(0..24)].</p>
-          <p>3. Groq LLM text passes through sanitizeTextWithNumberGuard() prior to React render.</p>
-          <p>4. Any unapproved or hallucinated numeric values are stripped and replaced with verified fallback statements.</p>
+          <p>
+            2. Allowed number set constructed: allowedNumbers = Set[...engineValues, hours(0..24)].
+          </p>
+          <p>
+            3. Groq LLM text passes through sanitizeTextWithNumberGuard() prior to React render.
+          </p>
+          <p>
+            4. Any unapproved or hallucinated numeric values are stripped and replaced with verified
+            fallback statements.
+          </p>
         </div>
       </section>
 
@@ -77,18 +84,36 @@ export const Method: React.FC = () => {
             1. Indoor PM2.5 Mass Balance Model (LBNL Steady-State)
           </h3>
           <p className="text-xs sm:text-sm text-slate-600">
-            Calculates indoor fine particulate concentration as an aerosol balance between ambient penetration, building air change rates, indoor deposition, air purifier CADR, and indoor sources:
+            Calculates indoor fine particulate concentration as an aerosol balance between ambient
+            penetration, building air change rates, indoor deposition, air purifier CADR, and indoor
+            sources:
           </p>
           <div className="p-4 bg-slate-900 text-teal-300 font-mono text-xs sm:text-sm rounded-xl overflow-x-auto">
             C_in = (PENETRATION × a × C_out) / (a + DEPOSITION + CADR / V) + sourceAdd
           </div>
           <ul className="text-xs text-slate-700 space-y-1 pl-4 list-disc">
-            <li><strong>PENETRATION:</strong> {PENETRATION} (fraction entering through structural cracks)</li>
-            <li><strong>a (ACH):</strong> Air changes/hr by window state ({ACH.closed} closed, {ACH.sealed} sealed, {ACH.open} open)</li>
-            <li><strong>DEPOSITION:</strong> {DEPOSITION} h⁻¹ (surface settling velocity)</li>
-            <li><strong>CADR:</strong> Clean Air Delivery Rate (m³/h) of active HEPA air cleaner</li>
-            <li><strong>V:</strong> Room volume (m³) = Area (m²) × 2.7m ceiling height</li>
-            <li><strong>Clamp:</strong> C_in is physically bounded to at least {MIN_INDOOR_FRACTION * 100}% of outdoor concentration ({MIN_INDOOR_FRACTION} × C_out) to account for filter bypass.</li>
+            <li>
+              <strong>PENETRATION:</strong> {PENETRATION} (fraction entering through structural
+              cracks)
+            </li>
+            <li>
+              <strong>a (ACH):</strong> Air changes/hr by window state ({ACH.closed} closed,{' '}
+              {ACH.sealed} sealed, {ACH.open} open)
+            </li>
+            <li>
+              <strong>DEPOSITION:</strong> {DEPOSITION} h⁻¹ (surface settling velocity)
+            </li>
+            <li>
+              <strong>CADR:</strong> Clean Air Delivery Rate (m³/h) of active HEPA air cleaner
+            </li>
+            <li>
+              <strong>V:</strong> Room volume (m³) = Area (m²) × 2.7m ceiling height
+            </li>
+            <li>
+              <strong>Clamp:</strong> C_in is physically bounded to at least{' '}
+              {MIN_INDOOR_FRACTION * 100}% of outdoor concentration ({MIN_INDOOR_FRACTION} × C_out)
+              to account for filter bypass.
+            </li>
           </ul>
         </div>
 
@@ -98,14 +123,16 @@ export const Method: React.FC = () => {
             2. Personal Inhalation Dose & Exposure Index (EI)
           </h3>
           <p className="text-xs sm:text-sm text-slate-600">
-            Calculates the breathing-weighted particulate intake across each 24-hour microenvironment block:
+            Calculates the breathing-weighted particulate intake across each 24-hour
+            microenvironment block:
           </p>
           <div className="p-4 bg-slate-900 text-teal-300 font-mono text-xs sm:text-sm rounded-xl overflow-x-auto space-y-1">
             <p>dose(h) = C_microenv(h) × BREATHING[activity] × (1 − MASK[mask])</p>
             <p>EI = Σ dose(h) for h=0..23 ÷ 24 (breathing-weighted 24h µg/m³)</p>
           </div>
           <p className="text-xs text-slate-600">
-            Where <code>C_microenv(h)</code> is assigned based on location (Home: C_in, Work/School: 0.7 × C_out, Outdoor: C_out, Commute: C_out × CommuteFactor).
+            Where <code>C_microenv(h)</code> is assigned based on location (Home: C_in, Work/School:
+            0.7 × C_out, Outdoor: C_out, Commute: C_out × CommuteFactor).
           </p>
         </div>
 
@@ -115,13 +142,16 @@ export const Method: React.FC = () => {
             3. Berkeley Earth Cigarette Equivalence Heuristic
           </h3>
           <p className="text-xs sm:text-sm text-slate-600">
-            Used as an intuitive communication metric to translate abstract air quality measurements into relatable impact:
+            Used as an intuitive communication metric to translate abstract air quality measurements
+            into relatable impact:
           </p>
           <div className="p-4 bg-slate-900 text-amber-300 font-mono text-xs sm:text-sm rounded-xl">
             Cigarette Equivalents = Exposure Index (EI) ÷ {CIG_PM25}
           </div>
           <p className="text-xs text-slate-600 leading-relaxed">
-            Formulated by Richard & Elizabeth Muller (Berkeley Earth). Based on epidemiological cohort studies showing that inhaling 22 µg/m³ of PM2.5 continuously for 24 hours imparts cardiopulmonary hazard equivalent to smoking approximately 1 cigarette per day.
+            Formulated by Richard & Elizabeth Muller (Berkeley Earth). Based on epidemiological
+            cohort studies showing that inhaling 22 µg/m³ of PM2.5 continuously for 24 hours imparts
+            cardiopulmonary hazard equivalent to smoking approximately 1 cigarette per day.
           </p>
         </div>
 
@@ -131,7 +161,8 @@ export const Method: React.FC = () => {
             4. Weekly Household CO₂e Greenhouse Gas Accounting
           </h3>
           <div className="p-4 bg-slate-900 text-teal-300 font-mono text-xs sm:text-sm rounded-xl overflow-x-auto">
-            CO2e_kg_week = Σ (distanceKm × CO2E_G_PER_PKM[mode] ÷ occupancy) × 5 ÷ 1000 + Fuel_Cooking + Fuel_Heating
+            CO2e_kg_week = Σ (distanceKm × CO2E_G_PER_PKM[mode] ÷ occupancy) × 5 ÷ 1000 +
+            Fuel_Cooking + Fuel_Heating
           </div>
           <p className="text-xs text-slate-600">
             Follows IPCC emission factors for urban mobility and residential fuels.
@@ -145,7 +176,8 @@ export const Method: React.FC = () => {
           Engine Constants & Source Verification
         </h2>
         <p className="text-xs sm:text-sm text-slate-600">
-          All values live exclusively in <code>src/engine/constants.ts</code> and are verified against peer-reviewed atmospheric and building science publications:
+          All values live exclusively in <code>src/engine/constants.ts</code> and are verified
+          against peer-reviewed atmospheric and building science publications:
         </p>
 
         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">

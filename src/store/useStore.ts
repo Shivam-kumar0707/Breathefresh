@@ -1,130 +1,12 @@
 import { create } from 'zustand';
-import { getDeviceId } from '../lib/deviceId';
 import { DEMO_PERSONAS } from '../data/personas';
-import type { Scenario, Member } from '../engine/exposure';
-import type { CookingFuel, HeatingFuel } from '../engine/emissions';
-import { type AirState, fetchAirQuality } from '../data/airApi';
+import type { Scenario } from '../engine/exposure';
+import { fetchAirQuality } from '../data/airApi';
 import { db, doc, setDoc } from '../lib/firebase';
+import type { AppStore, UserProfile } from './types';
+import { defaultPersona, getInitialProfile } from './initialProfile';
 
-export interface PlanTimelineItem {
-  startHour: number;
-  endHour: number;
-  title: string;
-  actionId: string | null;
-  why: string;
-}
-
-export interface MemberPlanTips {
-  memberId: string;
-  name?: string;
-  tips: string[];
-  avoid: string[];
-}
-
-export interface DailyPlan {
-  headline: string;
-  summary: string;
-  riskLevel: 'low' | 'moderate' | 'high' | 'severe';
-  timeline: PlanTimelineItem[];
-  members: MemberPlanTips[];
-  topActions: string[];
-  isFallback: boolean;
-  generatedAt: string;
-}
-
-export interface UserProfile {
-  deviceId: string;
-  city: {
-    name: string;
-    displayName: string;
-    lat: number;
-    lon: number;
-    country: string;
-  };
-  members: Member[];
-  lifestyle: {
-    homeAreaM2: number;
-    hasPurifier: boolean;
-    cadrM3h?: number;
-    cookingFuel: CookingFuel;
-    heatingFuel: HeatingFuel;
-    commuteMode: 'car_petrol' | 'two_wheeler' | 'metro' | 'bus';
-    commuteKm: number;
-    budgetTier: 'zero' | 'low' | 'mid';
-  };
-  language: 'en' | 'hi' | 'hinglish';
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-interface AppStore {
-  profile: UserProfile;
-  air: AirState | null;
-  isLoadingAir: boolean;
-  scenario: Scenario;
-  plan: DailyPlan | null;
-  isGeneratingPlan: boolean;
-  isRuleBasedFallback: boolean;
-  selectedActions: string[];
-  smogOverride: number | null; // null means use live series
-  isChatOpen: boolean;
-
-  // Actions
-  setProfile: (profile: Partial<UserProfile>) => void;
-  loadPersona: (personaId: string) => Promise<void>;
-  updateMember: (memberId: string, updates: Partial<Member>) => void;
-  addMember: (member: Member) => void;
-  removeMember: (memberId: string) => void;
-  setLanguage: (lang: 'en' | 'hi' | 'hinglish') => void;
-  setSmogOverride: (val: number | null) => void;
-  toggleAction: (actionId: string) => void;
-  setSelectedActions: (actions: string[]) => void;
-  setPlan: (plan: DailyPlan, isFallback?: boolean) => void;
-  setIsChatOpen: (open: boolean) => void;
-  refreshAirData: () => Promise<void>;
-  saveProfileToFirestore: () => Promise<void>;
-}
-
-const defaultPersona = DEMO_PERSONAS[0]; // The Sharma Family
-
-// Load cached profile or default to Sharma
-function getInitialProfile(): UserProfile {
-  const deviceId = getDeviceId();
-  try {
-    const cached = localStorage.getItem('breathefresh_profile');
-    if (cached) {
-      const parsed = JSON.parse(cached);
-      return { ...parsed, deviceId };
-    }
-  } catch {
-    // ignore
-  }
-
-  return {
-    deviceId,
-    city: {
-      name: defaultPersona.city.name,
-      displayName: `${defaultPersona.city.name}, ${defaultPersona.city.country}`,
-      lat: defaultPersona.city.lat,
-      lon: defaultPersona.city.lon,
-      country: defaultPersona.city.country,
-    },
-    members: defaultPersona.scenario.members,
-    lifestyle: {
-      homeAreaM2: defaultPersona.lifestyle.homeAreaM2,
-      hasPurifier: defaultPersona.lifestyle.hasPurifier,
-      cadrM3h: defaultPersona.lifestyle.cadrM3h,
-      cookingFuel: defaultPersona.lifestyle.cookingFuel,
-      heatingFuel: defaultPersona.lifestyle.heatingFuel,
-      commuteMode: defaultPersona.lifestyle.commuteMode,
-      commuteKm: defaultPersona.lifestyle.commuteKm,
-      budgetTier: defaultPersona.lifestyle.budgetTier,
-    },
-    language: 'en',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-}
+export * from './types';
 
 const initialProfile = getInitialProfile();
 
@@ -304,14 +186,9 @@ export const useStore = create<AppStore>((set, get) => ({
     const { profile } = get();
     set({ isLoadingAir: true });
     try {
-      const airData = await fetchAirQuality(
-        profile.city.lat,
-        profile.city.lon,
-        profile.city.name
-      );
+      const airData = await fetchAirQuality(profile.city.lat, profile.city.lon, profile.city.name);
 
       set((state) => {
-        // Update scenario outdoor series from airData today24hPm25
         const updatedScenario: Scenario = {
           ...state.scenario,
           outdoorPm25: airData.today24hPm25,
@@ -331,8 +208,7 @@ export const useStore = create<AppStore>((set, get) => ({
           isLoadingAir: false,
         };
       });
-    } catch (err) {
-      console.warn('refreshAirData failed, continuing with scenario:', err);
+    } catch {
       set({ isLoadingAir: false });
     }
   },
@@ -355,8 +231,8 @@ export const useStore = create<AppStore>((set, get) => ({
         },
         { merge: true }
       );
-    } catch (err) {
-      console.warn('Firestore profile sync failed silently:', err);
+    } catch {
+      // Handled silently
     }
   },
 }));

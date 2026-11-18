@@ -2,7 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { computeExposure, familyExposure, type Scenario } from './exposure';
 import { computeIndoorHour } from './indoor';
 import { compareActions, ACTION_CATALOG } from './actions';
-import { buildAllowedNumbers, validateTextNumbers, sanitizeTextWithNumberGuard } from './numberGuard';
+import {
+  buildAllowedNumbers,
+  validateTextNumbers,
+  sanitizeTextWithNumberGuard,
+} from './numberGuard';
 import { DEMO_PERSONAS } from '../data/personas';
 import { generateRuleBasedPlan } from './plannerFallback';
 import { processAirData, type AirState, type RawAirData } from '../data/airApi';
@@ -23,9 +27,23 @@ describe('BreatheFresh Impact Engine', () => {
         conditions: [],
         blocks: [
           { startHour: 0, endHour: 8, place: 'home', activity: 'sleep', mask: 'none' },
-          { startHour: 8, endHour: 9, place: 'commute', activity: 'rest', commuteMode: 'car_ac', mask: 'none' },
+          {
+            startHour: 8,
+            endHour: 9,
+            place: 'commute',
+            activity: 'rest',
+            commuteMode: 'car_ac',
+            mask: 'none',
+          },
           { startHour: 9, endHour: 17, place: 'work_school', activity: 'light', mask: 'none' },
-          { startHour: 17, endHour: 18, place: 'commute', activity: 'rest', commuteMode: 'car_ac', mask: 'none' },
+          {
+            startHour: 17,
+            endHour: 18,
+            place: 'commute',
+            activity: 'rest',
+            commuteMode: 'car_ac',
+            mask: 'none',
+          },
           { startHour: 18, endHour: 24, place: 'home', activity: 'rest', mask: 'none' },
         ],
       },
@@ -178,7 +196,8 @@ describe('BreatheFresh Impact Engine', () => {
     });
 
     // Valid text using approved engine numbers and hours
-    const validText = 'At 14:00, with AQI 342 and PM2.5 at 185.4, your family inhaled 8.4 cigarettes.';
+    const validText =
+      'At 14:00, with AQI 342 and PM2.5 at 185.4, your family inhaled 8.4 cigarettes.';
     const validation1 = validateTextNumbers(validText, allowed);
     expect(validation1.valid).toBe(true);
     expect(validation1.offendingNumbers.length).toBe(0);
@@ -191,7 +210,11 @@ describe('BreatheFresh Impact Engine', () => {
     expect(validation2.offendingNumbers).toContain(73.8);
 
     // Sanitization replaces sentences containing unverified numbers
-    const sanitized = sanitizeTextWithNumberGuard(invalidText, allowed, 'Impact verified by engine.');
+    const sanitized = sanitizeTextWithNumberGuard(
+      invalidText,
+      allowed,
+      'Impact verified by engine.'
+    );
     expect(sanitized).toContain('Impact verified by engine.');
     expect(sanitized).not.toContain('999');
   });
@@ -241,7 +264,10 @@ describe('BreatheFresh Impact Engine', () => {
       dataSourceLabel: 'Sample Data (Offline Snapshot)',
     };
 
-    const impacts = compareActions(sharma.scenario, ACTION_CATALOG.map((a) => a.id));
+    const impacts = compareActions(
+      sharma.scenario,
+      ACTION_CATALOG.map((a) => a.id)
+    );
     const plan = generateRuleBasedPlan(sharma.scenario, mockAirState, impacts, 'en');
 
     expect(plan.isFallback).toBe(true);
@@ -311,12 +337,20 @@ describe('BreatheFresh Impact Engine', () => {
   // Test 15: Chat dynamic fallback generates question-specific answers
   it('getDynamicChatFallback generates question-specific answers for distinct user questions', () => {
     // Window question
-    const windowAns = getDynamicChatFallback('Can I open windows for 20 minutes right now?', '', 'en');
+    const windowAns = getDynamicChatFallback(
+      'Can I open windows for 20 minutes right now?',
+      '',
+      'en'
+    );
     expect(windowAns).toContain('windows');
     expect(windowAns).toContain('1:00 PM');
 
     // Dadaji morning walk question (Hinglish)
-    const dadajiAns = getDynamicChatFallback('Kya Dadaji subah walk par ja sakte hain?', '', 'hinglish');
+    const dadajiAns = getDynamicChatFallback(
+      'Kya Dadaji subah walk par ja sakte hain?',
+      '',
+      'hinglish'
+    );
     expect(dadajiAns.toLowerCase()).toContain('dadaji');
     expect(dadajiAns.toLowerCase()).toContain('walk');
 

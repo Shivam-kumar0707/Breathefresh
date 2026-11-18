@@ -25,7 +25,7 @@ export interface PersonaSeed {
   scenario: Scenario;
 }
 
-// 24-hour winter smog profile typical for Ghaziabad / Delhi NCR (peak morning and night, dip in afternoon)
+// 24-hour winter smog profile typical for Ghaziabad / Delhi NCR (peak morning/night, dip in afternoon)
 export const NCR_WINTER_SMOG_HOURLY = [
   280, 290, 310, 330, 350, 370, 390, 410, // 00:00 - 07:00 morning inversion peak
   380, 320, 260, 220, 190, 180, 190, 210, // 08:00 - 15:00 afternoon ventilation window
@@ -33,9 +33,8 @@ export const NCR_WINTER_SMOG_HOURLY = [
 ];
 
 export const KRAKOW_WINTER_SMOG_HOURLY = [
-  120, 130, 140, 150, 160, 150, 140, 130,
-  110, 95, 80, 75, 70, 75, 85, 100,
-  125, 145, 160, 175, 180, 170, 150, 130,
+  120, 130, 140, 150, 160, 150, 140, 130, 110, 95, 80, 75,
+  70, 75, 85, 100, 125, 145, 160, 175, 180, 170, 150, 130,
 ];
 
 // 1. Primary Persona: The Sharma Family (Ghaziabad NCR)
@@ -77,7 +76,7 @@ const sharmaMembers: Member[] = [
       { startHour: 7, endHour: 8, place: 'commute', activity: 'rest', commuteMode: 'bus', mask: 'none' },
       { startHour: 8, endHour: 14, place: 'work_school', activity: 'light', mask: 'none' },
       { startHour: 14, endHour: 15, place: 'commute', activity: 'rest', commuteMode: 'bus', mask: 'none' },
-      { startHour: 15, endHour: 17, place: 'outdoor', activity: 'exercise', mask: 'none' }, // outdoor sports
+      { startHour: 15, endHour: 17, place: 'outdoor', activity: 'exercise', mask: 'none' }, // sports
       { startHour: 17, endHour: 24, place: 'home', activity: 'rest', mask: 'none' },
     ],
   },
@@ -101,7 +100,7 @@ const sharmaMembers: Member[] = [
     conditions: ['asthma_copd'],
     blocks: [
       { startHour: 0, endHour: 6, place: 'home', activity: 'sleep', mask: 'none' },
-      { startHour: 6, endHour: 7, place: 'outdoor', activity: 'light', mask: 'none' }, // early morning walk
+      { startHour: 6, endHour: 7, place: 'outdoor', activity: 'light', mask: 'none' }, // early walk
       { startHour: 7, endHour: 24, place: 'home', activity: 'rest', mask: 'none' },
     ],
   },

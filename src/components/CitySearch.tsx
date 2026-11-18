@@ -95,6 +95,11 @@ export const CitySearch: React.FC = () => {
         <div className="relative flex-1">
           <input
             type="text"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded={isOpen}
+            aria-controls="city-results-list"
+            aria-label="Search city location for air quality data"
             data-testid="city-search"
             value={query}
             onChange={(e) => handleSearch(e.target.value)}
@@ -103,11 +108,14 @@ export const CitySearch: React.FC = () => {
               setIsOpen(true);
             }}
             placeholder="Search city (e.g. Ghaziabad, Delhi, Kraków)..."
-            className="w-full px-4 py-2.5 pl-10 text-sm bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-slate-800 font-medium placeholder-slate-400"
+            className="w-full px-4 py-2.5 pl-10 text-sm bg-white border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent text-slate-900 font-medium placeholder-slate-500 min-h-[44px]"
           />
-          <MapPinIcon className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+          <MapPinIcon className="absolute left-3 top-3.5 w-4 h-4 text-slate-500" />
           {isSearching && (
-            <span className="absolute right-3 top-3 text-xs text-slate-400 animate-spin">
+            <span
+              className="absolute right-3 top-3 text-xs text-slate-500 animate-spin"
+              aria-label="Searching locations"
+            >
               ⌛
             </span>
           )}
@@ -116,7 +124,8 @@ export const CitySearch: React.FC = () => {
           type="button"
           onClick={handleGeolocation}
           title="Use current GPS location"
-          className="px-3 py-2.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl border border-slate-300 transition-colors flex items-center gap-1.5"
+          aria-label="Use current GPS location"
+          className="px-3.5 py-2.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl border border-slate-300 transition-colors flex items-center gap-1.5 min-h-[44px]"
         >
           <span>📍 GPS</span>
         </button>
@@ -124,19 +133,25 @@ export const CitySearch: React.FC = () => {
 
       {/* Dropdown Results */}
       {isOpen && (
-        <div className="absolute z-30 mt-1 w-full bg-white rounded-xl shadow-xl border border-slate-200 max-h-60 overflow-y-auto py-1">
-          <div className="px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+        <div
+          id="city-results-list"
+          role="listbox"
+          className="absolute z-30 mt-1 w-full bg-white rounded-xl shadow-xl border border-slate-200 max-h-60 overflow-y-auto py-1"
+        >
+          <div className="px-3 py-1.5 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
             Popular & Matching Smog Regions
           </div>
           {results.map((c) => (
             <button
               key={`${c.lat}-${c.lon}-${c.name}`}
               type="button"
+              role="option"
+              aria-selected={profile.city.name === c.name}
               onClick={() => selectCity(c)}
-              className="w-full text-left px-3.5 py-2 hover:bg-teal-50 flex items-center justify-between text-xs transition-colors"
+              className="w-full text-left px-3.5 py-2.5 hover:bg-teal-50 flex items-center justify-between text-xs transition-colors min-h-[44px]"
             >
-              <div className="font-medium text-slate-800">{c.displayName}</div>
-              <span className="text-[10px] text-slate-400 font-mono">
+              <div className="font-semibold text-slate-900">{c.displayName}</div>
+              <span className="text-[10px] text-slate-600 font-mono">
                 {c.lat}, {c.lon}
               </span>
             </button>

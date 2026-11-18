@@ -16,7 +16,9 @@ export const PlanTimeline: React.FC<PlanTimelineProps> = ({
   impactsMap,
   language = 'en',
 }) => {
-  const [explanations, setExplanations] = useState<Record<string, { explanation: string; soWhat: string }>>({});
+  const [explanations, setExplanations] = useState<
+    Record<string, { explanation: string; soWhat: string }>
+  >({});
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
   const handleExplain = async (actionId: string, title: string) => {
@@ -66,11 +68,11 @@ export const PlanTimeline: React.FC<PlanTimelineProps> = ({
               className="relative group bg-white rounded-xl p-4 sm:p-5 border border-slate-200 shadow-sm space-y-2.5 transition-all hover:border-teal-300"
             >
               {/* Timeline Node Dot */}
-              <div className="absolute -left-[23px] sm:-left-[31px] top-5 w-4 h-4 rounded-full bg-teal-600 border-4 border-white shadow-sm" />
+              <div className="absolute -left-[23px] sm:-left-[31px] top-5 w-4 h-4 rounded-full bg-teal-700 border-4 border-white shadow-xs" />
 
               {/* Header: Time & Actions */}
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs font-mono font-bold text-teal-800 bg-teal-50 px-2.5 py-1 rounded-md border border-teal-200">
+                <span className="text-xs font-mono font-bold text-teal-900 bg-teal-50 px-2.5 py-1 rounded-md border border-teal-300">
                   {timeRangeStr}
                 </span>
 
@@ -85,12 +87,10 @@ export const PlanTimeline: React.FC<PlanTimelineProps> = ({
 
               {/* Title & Personalized Reason */}
               <div>
-                <h4 className="font-bold text-slate-900 text-sm sm:text-base leading-snug">
+                <h3 className="font-bold text-slate-900 text-sm sm:text-base leading-snug">
                   {item.title}
-                </h4>
-                <p className="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed">
-                  {item.why}
-                </p>
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed">{item.why}</p>
               </div>
 
               {/* Explain Button & Drawer */}
@@ -99,15 +99,15 @@ export const PlanTimeline: React.FC<PlanTimelineProps> = ({
                   <button
                     type="button"
                     onClick={() => handleExplain(item.actionId!, item.title)}
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-700 hover:text-teal-900 bg-teal-50/80 hover:bg-teal-100 px-2.5 py-1 rounded-lg transition-colors border border-teal-200"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-800 hover:text-teal-950 bg-teal-50 hover:bg-teal-100 px-3 py-1.5 rounded-lg transition-colors border border-teal-300 min-h-[36px]"
                   >
-                    <SparklesIcon className="w-3.5 h-3.5 text-teal-600" />
+                    <SparklesIcon className="w-3.5 h-3.5 text-teal-700" />
                     <span>
                       {loadingAction === item.actionId
                         ? 'Analyzing...'
                         : explanations[item.actionId]
-                        ? 'Hide Explanation'
-                        : 'Explain this Impact'}
+                          ? 'Hide Explanation'
+                          : 'Explain this Impact'}
                     </span>
                   </button>
 

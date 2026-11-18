@@ -17,7 +17,18 @@ const ExplainInputSchema = z.object({
   language: z.enum(['en', 'hi', 'hinglish']).default('en'),
 });
 
-export default async function handler(req: IncomingMessage & { body?: unknown }, res: ServerResponse) {
+/**
+ * Serverless API handler for /api/explain.
+ * Generates plain-language, non-technical explanations of specific air actions and their physical impact.
+ * Validates against ExplainOutputSchema with strict fallback if Groq is unavailable.
+ *
+ * @param req - Incoming HTTP request with action ID, title, and quantitative deltas.
+ * @param res - Outgoing server response with structured explanation and key takeaway.
+ */
+export default async function handler(
+  req: IncomingMessage & { body?: unknown },
+  res: ServerResponse
+) {
   res.setHeader('Access-Control-Allow-Origin', GROQ_CONFIG.allowedOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -42,7 +53,12 @@ export default async function handler(req: IncomingMessage & { body?: unknown },
     res.statusCode = 429;
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Retry-After', String(rateCheck.resetInSec));
-    res.end(JSON.stringify({ error: 'Too many requests. Please wait a moment.', retryAfter: rateCheck.resetInSec }));
+    res.end(
+      JSON.stringify({
+        error: 'Too many requests. Please wait a moment.',
+        retryAfter: rateCheck.resetInSec,
+      })
+    );
     return;
   }
 
@@ -127,7 +143,9 @@ CONTEXT: ${input.memberContext ?? 'General family protection'}`;
     }
 
     const json = await groqRes.json();
-    const parsedExplain = ExplainOutputSchema.parse(JSON.parse(json.choices?.[0]?.message?.content || '{}'));
+    const parsedExplain = ExplainOutputSchema.parse(
+      JSON.parse(json.choices?.[0]?.message?.content || '{}')
+    );
 
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');

@@ -48,47 +48,69 @@ export const HourlyChart: React.FC = () => {
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h3 className="text-base font-bold text-slate-800">
+          <h2 className="text-base font-bold text-slate-900">
             48-Hour PM2.5 Forecast & Diurnal Pattern
-          </h3>
-          <p className="text-xs text-slate-500">
-            Hourly ambient concentrations with highlighted clean ventilation and peak inversion windows
+          </h2>
+          <p className="text-xs text-slate-600">
+            Hourly ambient concentrations with highlighted clean ventilation and peak inversion
+            windows
           </p>
         </div>
         <div className="flex items-center gap-3 text-xs">
           <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded bg-emerald-500/20 border border-emerald-500" />
-            <span className="text-slate-600 font-medium">Clean Window</span>
+            <span className="w-3 h-3 rounded bg-emerald-500/20 border border-emerald-600" />
+            <span className="text-slate-700 font-medium">Clean Window</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded bg-rose-500/20 border border-rose-500" />
-            <span className="text-slate-600 font-medium">Peak Smog</span>
+            <span className="w-3 h-3 rounded bg-rose-500/20 border border-rose-600" />
+            <span className="text-slate-700 font-medium">Peak Smog</span>
           </div>
         </div>
       </div>
 
+      {/* Accessible table summary for screen readers */}
+      <div className="sr-only">
+        <h3 className="sr-only">Accessible summary of 48-hour air quality forecast</h3>
+        <p>{summaryText}</p>
+        <table>
+          <caption>Hourly PM2.5 and AQI values</caption>
+          <thead>
+            <tr>
+              <th scope="col">Time</th>
+              <th scope="col">PM2.5 (µg/m³)</th>
+              <th scope="col">AQI</th>
+            </tr>
+          </thead>
+          <tbody>
+            {chartData.slice(0, 12).map((item) => (
+              <tr key={item.time}>
+                <td>{item.label}</td>
+                <td>{item.pm2_5}</td>
+                <td>{item.aqi}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
       {/* Chart container */}
-      <div className="h-64 sm:h-72 w-full pt-2">
+      <div className="h-64 sm:h-72 w-full pt-2" aria-hidden="true">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="pm25Gradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#0d9488" stopOpacity={0.4} />
-                <stop offset="95%" stopColor="#0d9488" stopOpacity={0.0} />
+                <stop offset="5%" stopColor="#0f766e" stopOpacity={0.4} />
+                <stop offset="95%" stopColor="#0f766e" stopOpacity={0.0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
             <XAxis
               dataKey="label"
               tickLine={false}
-              tick={{ fontSize: 11, fill: '#64748b' }}
+              tick={{ fontSize: 11, fill: '#475569' }}
               interval={5}
             />
-            <YAxis
-              tickLine={false}
-              tick={{ fontSize: 11, fill: '#64748b' }}
-              domain={[0, 'auto']}
-            />
+            <YAxis tickLine={false} tick={{ fontSize: 11, fill: '#475569' }} domain={[0, 'auto']} />
             <Tooltip
               content={({ active, payload }) => {
                 if (active && payload && payload.length) {
@@ -113,7 +135,7 @@ export const HourlyChart: React.FC = () => {
               x2={chartData[Math.min(chartData.length - 1, bestHour + 2)]?.label}
               fill="#10b981"
               fillOpacity={0.15}
-              stroke="#10b981"
+              stroke="#059669"
               strokeDasharray="2 2"
             />
 
@@ -123,15 +145,15 @@ export const HourlyChart: React.FC = () => {
               x2={chartData[Math.min(chartData.length - 1, worstHour + 2)]?.label}
               fill="#ef4444"
               fillOpacity={0.15}
-              stroke="#ef4444"
+              stroke="#dc2626"
               strokeDasharray="2 2"
             />
 
             <Area
               type="monotone"
               dataKey="pm2_5"
-              stroke="#0d9488"
-              strokeWidth={2}
+              stroke="#0f766e"
+              strokeWidth={2.5}
               fillOpacity={1}
               fill="url(#pm25Gradient)"
             />

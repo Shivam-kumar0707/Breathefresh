@@ -14,6 +14,15 @@ export const RoomScanModal: React.FC<RoomScanModalProps> = ({ isOpen, onClose })
   const [result, setResult] = useState<VisionOutput | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -60,14 +69,21 @@ export const RoomScanModal: React.FC<RoomScanModalProps> = ({ isOpen, onClose })
       setResult(output);
     } catch (err) {
       console.warn('Room scan error:', err);
-      setErrorMsg('Room scan analysis is temporarily busy. Showing standard layout recommendations.');
+      setErrorMsg(
+        'Room scan analysis is temporarily busy. Showing standard layout recommendations.'
+      );
     } finally {
       setAnalyzing(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="room-scan-title"
+      className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4"
+    >
       <div className="bg-white w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
@@ -76,11 +92,12 @@ export const RoomScanModal: React.FC<RoomScanModalProps> = ({ isOpen, onClose })
               <SparklesIcon className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 text-base sm:text-lg">
+              <h3 id="room-scan-title" className="font-bold text-slate-900 text-base sm:text-lg">
                 Room Scan AI Diagnostics
               </h3>
               <p className="text-xs text-slate-500">
-                Snap or upload a room photo to detect air infiltration gaps and optimize purifier placement
+                Snap or upload a room photo to detect air infiltration gaps and optimize purifier
+                placement
               </p>
             </div>
           </div>
@@ -121,11 +138,7 @@ export const RoomScanModal: React.FC<RoomScanModalProps> = ({ isOpen, onClose })
           ) : (
             <div className="space-y-4">
               <div className="relative rounded-2xl overflow-hidden max-h-52 bg-slate-950 flex items-center justify-center border border-slate-200">
-                <img
-                  src={preview}
-                  alt="Room preview"
-                  className="w-full h-full object-cover"
-                />
+                <img src={preview} alt="Room preview" className="w-full h-full object-cover" />
                 {analyzing && (
                   <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-xs flex flex-col items-center justify-center text-white space-y-2">
                     <div className="animate-spin text-2xl">🌀</div>

@@ -9,7 +9,12 @@ export const AirPanel: React.FC = () => {
 
   if (isLoadingAir || !air) {
     return (
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 animate-pulse">
+      <div
+        role="status"
+        aria-live="polite"
+        className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 animate-pulse"
+      >
+        <span className="sr-only">Loading air quality data...</span>
         <div className="h-6 bg-slate-200 rounded w-1/3 mb-4"></div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="h-20 bg-slate-100 rounded-xl"></div>
@@ -21,7 +26,8 @@ export const AirPanel: React.FC = () => {
     );
   }
 
-  const { naqi, current, grapStage, isNcr, bestWindow, worstWindow, inversionRisk, isSampleData } = air;
+  const { naqi, current, grapStage, isNcr, bestWindow, worstWindow, inversionRisk, isSampleData } =
+    air;
 
   return (
     <section
@@ -89,8 +95,14 @@ export const AirPanel: React.FC = () => {
             </span>
             <span
               data-testid="naqi-category"
-              className="text-xs font-semibold px-2 py-0.5 rounded text-white"
-              style={{ backgroundColor: naqi.color }}
+              className="text-xs font-bold px-2 py-0.5 rounded"
+              style={{
+                backgroundColor: naqi.color,
+                color:
+                  naqi.category === 'Moderate' || naqi.category === 'Satisfactory'
+                    ? '#0f172a'
+                    : '#ffffff',
+              }}
             >
               {naqi.category}
             </span>
@@ -152,15 +164,16 @@ export const AirPanel: React.FC = () => {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h4 className="text-xs font-bold text-emerald-900 uppercase tracking-wide">
+              <h3 className="text-xs font-bold text-emerald-900 uppercase tracking-wide">
                 {STRINGS.air.cleanWindow}
-              </h4>
+              </h3>
               <span className="text-xs font-mono font-semibold text-emerald-800 bg-emerald-100/70 px-1.5 py-0.2 rounded">
                 {bestWindow.timeLabel}
               </span>
             </div>
             <p className="text-xs text-emerald-800 mt-1">
-              Lowest PM2.5 dips to <strong>{bestWindow.pm25} µg/m³</strong>. Best time for short cross-ventilation or necessary outdoor errands.
+              Lowest PM2.5 dips to <strong>{bestWindow.pm25} µg/m³</strong>. Best time for short
+              cross-ventilation or necessary outdoor errands.
             </p>
           </div>
         </div>
@@ -172,15 +185,16 @@ export const AirPanel: React.FC = () => {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h4 className="text-xs font-bold text-rose-900 uppercase tracking-wide">
+              <h3 className="text-xs font-bold text-rose-900 uppercase tracking-wide">
                 {STRINGS.air.worstWindow}
-              </h4>
+              </h3>
               <span className="text-xs font-mono font-semibold text-rose-800 bg-rose-100/70 px-1.5 py-0.2 rounded">
                 {worstWindow.timeLabel}
               </span>
             </div>
             <p className="text-xs text-rose-800 mt-1">
-              Smog peaks at <strong>{worstWindow.pm25} µg/m³</strong>. Seal doors, keep indoor HEPA purifiers running, and avoid outdoor exercise.
+              Smog peaks at <strong>{worstWindow.pm25} µg/m³</strong>. Seal doors, keep indoor HEPA
+              purifiers running, and avoid outdoor exercise.
             </p>
           </div>
         </div>
@@ -191,7 +205,8 @@ export const AirPanel: React.FC = () => {
         <div className="p-3.5 rounded-xl bg-purple-50 border border-purple-200 flex items-start gap-2.5 text-xs text-purple-900">
           <AlertTriangleIcon className="w-4 h-4 text-purple-600 flex-shrink-0 mt-0.5" />
           <div>
-            <span className="font-bold">{STRINGS.air.inversionAlert}:</span> {STRINGS.air.inversionDesc}
+            <span className="font-bold">{STRINGS.air.inversionAlert}:</span>{' '}
+            {STRINGS.air.inversionDesc}
           </div>
         </div>
       )}

@@ -17,7 +17,19 @@ const ChatInputSchema = z.object({
   language: z.enum(['en', 'hi', 'hinglish']).default('en'),
 });
 
-export default async function handler(req: IncomingMessage & { body?: unknown }, res: ServerResponse) {
+/**
+ * Serverless API handler for /api/chat.
+ * Provides Server-Sent Events (SSE) streaming conversational answers to user smog questions.
+ * Enforces medical safety rules, prompt-injection defenses, strict IP rate limiting,
+ * and falls back cleanly to context-aware local generation if the external model is unavailable.
+ *
+ * @param req - Incoming HTTP request with conversation messages and air context.
+ * @param res - Outgoing server response streaming SSE chunks.
+ */
+export default async function handler(
+  req: IncomingMessage & { body?: unknown },
+  res: ServerResponse
+) {
   res.setHeader('Access-Control-Allow-Origin', GROQ_CONFIG.allowedOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -42,7 +54,12 @@ export default async function handler(req: IncomingMessage & { body?: unknown },
     res.statusCode = 429;
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Retry-After', String(rateCheck.resetInSec));
-    res.end(JSON.stringify({ error: 'Too many requests. Please wait a moment.', retryAfter: rateCheck.resetInSec }));
+    res.end(
+      JSON.stringify({
+        error: 'Too many requests. Please wait a moment.',
+        retryAfter: rateCheck.resetInSec,
+      })
+    );
     return;
   }
 
@@ -133,13 +150,15 @@ export default async function handler(req: IncomingMessage & { body?: unknown },
       throw new Error(`Groq returned ${groqRes.status}`);
     }
 
-    const bodyAny = groqRes.body as unknown as {
+    interface StreamBodySource {
       getReader?: () => ReadableStreamDefaultReader<Uint8Array>;
       on?: (event: string, listener: (chunk: Buffer) => void) => void;
-    };
+    }
 
-    if (typeof bodyAny?.getReader === 'function') {
-      const reader = bodyAny.getReader();
+    const streamBody = groqRes.body as unknown as StreamBodySource;
+
+    if (typeof streamBody?.getReader === 'function') {
+      const reader = streamBody.getReader();
       const decoder = new TextDecoder('utf-8');
       let streamBuffer = '';
 
@@ -171,9 +190,9 @@ export default async function handler(req: IncomingMessage & { body?: unknown },
 
       res.write('data: [DONE]\n\n');
       res.end();
-    } else if (typeof bodyAny?.on === 'function') {
+    } else if (typeof streamBody?.on === 'function') {
       let streamBuffer = '';
-      bodyAny.on('data', (chunk: Buffer) => {
+      streamBody.on('data', (chunk: Buffer) => {
         streamBuffer += chunk.toString('utf-8');
         const lines = streamBuffer.split('\n');
         streamBuffer = lines.pop() ?? '';
@@ -196,12 +215,12 @@ export default async function handler(req: IncomingMessage & { body?: unknown },
         }
       });
 
-      bodyAny.on('end', () => {
+      streamBody.on('end', () => {
         res.write('data: [DONE]\n\n');
         res.end();
       });
 
-      bodyAny.on('error', (err: unknown) => {
+      streamBody.on('error', (err: unknown) => {
         console.warn('Groq stream error:', err);
         res.end();
       });

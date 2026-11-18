@@ -4,21 +4,8 @@ import { useStore } from '../store/useStore';
 import { STRINGS } from '../i18n/en';
 import { db, doc, getDoc, setDoc, updateDoc, increment } from '../lib/firebase';
 import { ShareCard } from '../components/ShareCard';
-import { ShareIcon, SparklesIcon, UsersIcon } from '../components/icons';
-
-interface CommunityData {
-  code: string;
-  name: string;
-  type: 'society' | 'school' | 'office' | 'neighbourhood';
-  city: string;
-  createdAt: string;
-  memberCount: number;
-  pledgeCount: number;
-  cigsAvoidedTotal: number;
-  co2eSavedKgTotal: number;
-}
-
-const EMOJIS = ['🌱', '🛡️', '🚴', '🍃', '⚡', '🏠', '✨', '🌲'];
+import { CommunityImpactView, type CommunityData } from '../components/CommunityImpactView';
+import { CommunityForms } from '../components/CommunityForms';
 
 function generateCommunityCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -37,7 +24,9 @@ export const Community: React.FC = () => {
   const [selectedEmoji, setSelectedEmoji] = useState('🌱');
   const [joinCodeInput, setJoinCodeInput] = useState('');
   const [newCommName, setNewCommName] = useState('');
-  const [newCommType, setNewCommType] = useState<'society' | 'school' | 'office' | 'neighbourhood'>('society');
+  const [newCommType, setNewCommType] = useState<'society' | 'school' | 'office' | 'neighbourhood'>(
+    'society'
+  );
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isGeneratingCard, setIsGeneratingCard] = useState(false);
   const shareCardRef = useRef<HTMLDivElement>(null);
@@ -89,13 +78,12 @@ export const Community: React.FC = () => {
     localStorage.setItem('breathefresh_community', JSON.stringify(newComm));
     setStatusMessage(`Created community "${newComm.name}" with invite code ${newComm.code}`);
 
-    // If Firebase configured, sync to Firestore
     if (db) {
       try {
         const commDoc = doc(db, 'communities', code);
         await setDoc(commDoc, newComm);
-      } catch (err) {
-        console.warn('Firestore community create failed silently:', err);
+      } catch {
+        // Firestore fallback handled
       }
     }
   };
@@ -114,7 +102,6 @@ export const Community: React.FC = () => {
         const snapshot = await getDoc(commDoc);
         if (snapshot.exists()) {
           const data = snapshot.data() as CommunityData;
-          // Increment community counters
           await updateDoc(commDoc, {
             memberCount: increment(1),
             pledgeCount: increment(selectedActions.length),
@@ -126,8 +113,8 @@ export const Community: React.FC = () => {
           setStatusMessage(`Successfully joined ${data.name}!`);
           return;
         }
-      } catch (err) {
-        console.warn('Firestore join failed, using local simulate:', err);
+      } catch {
+        // Handled silently
       }
     }
 
@@ -159,8 +146,7 @@ export const Community: React.FC = () => {
       link.download = `BreatheFresh-Impact-${activeCommunity?.code || 'Family'}.png`;
       link.href = dataUrl;
       link.click();
-    } catch (err) {
-      console.warn('Share card generation failed:', err);
+    } catch {
       alert('Could not generate image. Please screenshot your impact card!');
     } finally {
       setIsGeneratingCard(false);
@@ -191,85 +177,23 @@ export const Community: React.FC = () => {
       </div>
 
       {statusMessage && (
-        <div className="p-3 bg-teal-50 border border-teal-200 rounded-xl text-xs font-semibold text-teal-900">
+        <div
+          role="status"
+          aria-live="polite"
+          className="p-3 bg-teal-50 border border-teal-200 rounded-xl text-xs font-semibold text-teal-900"
+        >
           ✓ {statusMessage}
         </div>
       )}
 
       {/* Active Community Impact Showcase */}
       {activeCommunity && (
-        <section className="bg-gradient-to-br from-slate-900 via-slate-800 to-teal-950 text-white rounded-2xl p-6 sm:p-7 shadow-lg space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
-            <div>
-              <span className="text-xs font-mono font-bold text-teal-400 bg-teal-900/60 px-2.5 py-0.5 rounded-full border border-teal-700/50">
-                Code: {activeCommunity.code}
-              </span>
-              <h2 className="text-xl sm:text-2xl font-black text-white mt-1">
-                {activeCommunity.name}
-              </h2>
-              <p className="text-xs text-slate-300">
-                {activeCommunity.city} · {activeCommunity.type.toUpperCase()}
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                data-testid="share-button"
-                onClick={handleDownloadCard}
-                disabled={isGeneratingCard}
-                className="px-3.5 py-2 text-xs font-bold text-slate-900 bg-teal-400 hover:bg-teal-300 rounded-xl transition-all shadow-xs flex items-center gap-1.5"
-              >
-                <ShareIcon className="w-3.5 h-3.5" />
-                <span>{isGeneratingCard ? 'Generating...' : STRINGS.community.shareCardBtn}</span>
-              </button>
-
-              <a
-                href={whatsappShareUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-3.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl transition-all shadow-xs flex items-center gap-1.5"
-              >
-                <span>WhatsApp 💬</span>
-              </a>
-            </div>
-          </div>
-
-          {/* Collective Scores Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-            <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-              <span className="text-xs text-slate-400 block">{STRINGS.community.sharedScore}</span>
-              <span className="text-2xl sm:text-3xl font-black text-teal-300 font-mono">
-                {activeCommunity.memberCount}
-              </span>
-              <span className="text-[11px] text-slate-400 block mt-0.5">Active Families</span>
-            </div>
-
-            <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-              <span className="text-xs text-slate-400 block">{STRINGS.community.totalPledges}</span>
-              <span className="text-2xl sm:text-3xl font-black text-emerald-400 font-mono">
-                {activeCommunity.pledgeCount}
-              </span>
-              <span className="text-[11px] text-slate-400 block mt-0.5">Pledged Actions</span>
-            </div>
-
-            <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-              <span className="text-xs text-slate-400 block">{STRINGS.community.cigsAvoidedTotal}</span>
-              <span className="text-2xl sm:text-3xl font-black text-amber-300 font-mono">
-                {activeCommunity.cigsAvoidedTotal}
-              </span>
-              <span className="text-[11px] text-slate-400 block mt-0.5">Cigs Avoided</span>
-            </div>
-
-            <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-              <span className="text-xs text-slate-400 block">{STRINGS.community.co2eSavedTotal}</span>
-              <span className="text-2xl sm:text-3xl font-black text-teal-300 font-mono">
-                {activeCommunity.co2eSavedKgTotal}
-              </span>
-              <span className="text-[11px] text-slate-400 block mt-0.5">kg CO₂e Slashed</span>
-            </div>
-          </div>
-        </section>
+        <CommunityImpactView
+          community={activeCommunity}
+          isGeneratingCard={isGeneratingCard}
+          whatsappShareUrl={whatsappShareUrl}
+          onDownloadCard={handleDownloadCard}
+        />
       )}
 
       {/* Hidden Share Card Container for html-to-image download */}
@@ -285,146 +209,20 @@ export const Community: React.FC = () => {
       </div>
 
       {/* Forms: Create or Join */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Create Community Form */}
-        <section className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm space-y-4">
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-teal-50 text-teal-700">
-              <UsersIcon className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="font-bold text-slate-900 text-base">
-                {STRINGS.community.createTitle}
-              </h3>
-              <p className="text-xs text-slate-500">
-                Start a private clean air coalition for your apartment or school
-              </p>
-            </div>
-          </div>
-
-          <form onSubmit={handleCreateCommunity} className="space-y-3 pt-1">
-            <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">
-                Community Name
-              </label>
-              <input
-                type="text"
-                required
-                maxLength={60}
-                value={newCommName}
-                onChange={(e) => setNewCommName(e.target.value)}
-                placeholder="e.g. Express Garden Society RWA"
-                className="w-full px-3.5 py-2 text-xs sm:text-sm border border-slate-300 rounded-xl bg-white"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">
-                Community Type
-              </label>
-              <select
-                value={newCommType}
-                onChange={(e) =>
-                  setNewCommType(e.target.value as 'society' | 'school' | 'office' | 'neighbourhood')
-                }
-                className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl bg-white font-medium"
-              >
-                <option value="society">Residential Apartment / Society</option>
-                <option value="school">School / Parent-Teacher Group</option>
-                <option value="office">Workplace / Corporate Campus</option>
-                <option value="neighbourhood">Neighbourhood / Sector Circle</option>
-              </select>
-            </div>
-
-            <button
-              type="submit"
-              data-testid="community-create"
-              className="w-full py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs sm:text-sm rounded-xl transition-colors shadow-xs"
-            >
-              {STRINGS.community.createBtn}
-            </button>
-          </form>
-        </section>
-
-        {/* Join Community Form */}
-        <section className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm space-y-4">
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-teal-50 text-teal-700">
-              <SparklesIcon className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="font-bold text-slate-900 text-base">
-                {STRINGS.community.joinTitle}
-              </h3>
-              <p className="text-xs text-slate-500">
-                Enter a 6-character code shared by your neighbor
-              </p>
-            </div>
-          </div>
-
-          <form onSubmit={handleJoinCommunity} className="space-y-3 pt-1">
-            <div>
-              <label className="text-xs font-semibold text-slate-700 block mb-1">
-                6-Character Community Code
-              </label>
-              <input
-                type="text"
-                required
-                maxLength={6}
-                value={joinCodeInput}
-                onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
-                placeholder="e.g. GZB202"
-                className="w-full px-3.5 py-2 text-sm font-mono uppercase tracking-widest font-bold border border-slate-300 rounded-xl bg-white text-teal-800"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Anonymous Nickname
-                </label>
-                <input
-                  type="text"
-                  maxLength={20}
-                  value={nick}
-                  onChange={(e) => setNick(e.target.value)}
-                  className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-xl bg-white font-medium"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
-                  Avatar Emoji
-                </label>
-                <div className="flex gap-1 overflow-x-auto py-1">
-                  {EMOJIS.map((em) => (
-                    <button
-                      key={em}
-                      type="button"
-                      onClick={() => setSelectedEmoji(em)}
-                      className={`w-7 h-7 rounded-lg text-sm flex items-center justify-center border transition-all ${
-                        selectedEmoji === em
-                          ? 'bg-teal-100 border-teal-500 scale-110'
-                          : 'border-slate-200 hover:bg-slate-100'
-                      }`}
-                    >
-                      {em}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              data-testid="community-join"
-              className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm rounded-xl transition-colors shadow-xs"
-            >
-              {STRINGS.community.joinBtn}
-            </button>
-          </form>
-        </section>
-      </div>
+      <CommunityForms
+        newCommName={newCommName}
+        setNewCommName={setNewCommName}
+        newCommType={newCommType}
+        setNewCommType={setNewCommType}
+        joinCodeInput={joinCodeInput}
+        setJoinCodeInput={setJoinCodeInput}
+        nick={nick}
+        setNick={setNick}
+        selectedEmoji={selectedEmoji}
+        setSelectedEmoji={setSelectedEmoji}
+        onCreateCommunity={handleCreateCommunity}
+        onJoinCommunity={handleJoinCommunity}
+      />
     </div>
   );
 };

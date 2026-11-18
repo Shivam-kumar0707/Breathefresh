@@ -37,17 +37,20 @@ export const Header: React.FC = () => {
         </Link>
 
         {/* Navigation Landmarks */}
-        <nav aria-label="Main Navigation" className="hidden md:flex items-center gap-1 text-xs font-semibold">
+        <nav
+          aria-label="Main Navigation"
+          className="hidden md:flex items-center gap-1 text-xs font-semibold"
+        >
           {navLinks.map((link) => {
             const isActive = location.pathname === link.to;
             return (
               <Link
                 key={link.to}
                 to={link.to}
-                className={`px-3 py-1.5 rounded-lg transition-colors ${
+                className={`px-3 py-2 rounded-lg transition-colors min-h-[44px] flex items-center ${
                   isActive
-                    ? 'bg-teal-50 text-teal-800'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                    ? 'bg-teal-50 text-teal-800 font-bold'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
                 }`}
               >
                 {link.label}
@@ -63,7 +66,7 @@ export const Header: React.FC = () => {
             value={profile.language}
             onChange={(e) => setLanguage(e.target.value as 'en' | 'hi' | 'hinglish')}
             aria-label="Language selection"
-            className="text-xs font-medium px-2 py-1.5 border border-slate-200 rounded-lg bg-slate-50 text-slate-700 focus:outline-none focus:ring-1 focus:ring-teal-500 cursor-pointer"
+            className="text-xs font-medium px-2.5 py-2 border border-slate-300 rounded-lg bg-slate-50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-600 cursor-pointer min-h-[44px]"
           >
             <option value="en">English</option>
             <option value="hi">हिन्दी (Hindi)</option>
@@ -74,7 +77,7 @@ export const Header: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsRoomScanOpen(true)}
-            className="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-teal-800 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-xl transition-colors shadow-xs"
+            className="hidden sm:inline-flex items-center gap-1 px-3 py-2 text-xs font-bold text-teal-900 bg-teal-50 hover:bg-teal-100 border border-teal-300 rounded-xl transition-colors shadow-xs min-h-[44px]"
           >
             <span>📷 Scan</span>
           </button>
@@ -83,7 +86,7 @@ export const Header: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsChatOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 rounded-xl transition-all shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-teal-700 hover:bg-teal-800 rounded-xl transition-all shadow-xs min-h-[44px]"
           >
             <SparklesIcon className="w-3.5 h-3.5" />
             <span>Ask AI</span>
@@ -92,17 +95,18 @@ export const Header: React.FC = () => {
       </div>
 
       {/* Mobile Nav Bar */}
-      <nav aria-label="Mobile Navigation" className="md:hidden flex border-t border-slate-200 bg-white overflow-x-auto no-scrollbar px-2 py-1.5 gap-1 text-xs font-semibold">
+      <nav
+        aria-label="Mobile Navigation"
+        className="md:hidden flex border-t border-slate-200 bg-white overflow-x-auto no-scrollbar px-2 py-1.5 gap-1 text-xs font-semibold"
+      >
         {navLinks.map((link) => {
           const isActive = location.pathname === link.to;
           return (
             <Link
               key={link.to}
               to={link.to}
-              className={`px-3 py-1 rounded-md whitespace-nowrap transition-colors ${
-                isActive
-                  ? 'bg-teal-600 text-white'
-                  : 'text-slate-600 hover:bg-slate-100'
+              className={`px-3 py-2 rounded-md whitespace-nowrap transition-colors min-h-[44px] flex items-center ${
+                isActive ? 'bg-teal-700 text-white font-bold' : 'text-slate-700 hover:bg-slate-100'
               }`}
             >
               {link.label}
@@ -112,10 +116,7 @@ export const Header: React.FC = () => {
       </nav>
 
       {/* Room Scan Modal */}
-      <RoomScanModal
-        isOpen={isRoomScanOpen}
-        onClose={() => setIsRoomScanOpen(false)}
-      />
+      <RoomScanModal isOpen={isRoomScanOpen} onClose={() => setIsRoomScanOpen(false)} />
     </header>
   );
 };

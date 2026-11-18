@@ -1,8 +1,4 @@
-import {
-  CO2E_G_PER_PKM,
-  COOKING_CO2E_KG_WEEK,
-  HEATING_CO2E_KG_WEEK,
-} from './constants';
+import { CO2E_G_PER_PKM, COOKING_CO2E_KG_WEEK, HEATING_CO2E_KG_WEEK } from './constants';
 import type { Scenario } from './exposure';
 
 export type CookingFuel = keyof typeof COOKING_CO2E_KG_WEEK;
@@ -24,8 +20,15 @@ function getCommuteEmissionFactor(mode: string): number {
 }
 
 /**
- * Computes weekly CO2e emissions for a scenario.
+ * Computes weekly equivalent greenhouse gas emissions (kg CO2e / week) for household activities.
+ * Factors in transport passenger-km based on commute mode, cooking fuel type, and heating source.
  * Pure deterministic calculation.
+ *
+ * @param scenario - The family scenario with travel distance and member blocks.
+ * @param cookingFuel - Household cooking fuel tier (lpg, induction, biomass).
+ * @param heatingFuel - Winter space heating tier (none, electric, coal_wood).
+ * @param workDaysPerWeek - Commute days per week (default: 5).
+ * @returns Breakdown of transport, cooking, heating, and total weekly CO2e emissions.
  */
 export function computeEmissions(
   scenario: Scenario,

@@ -88,7 +88,13 @@ export function getDynamicChatFallback(
     return 'No, seniors and vulnerable family members (especially with COPD or asthma) should strictly avoid morning outdoor walks during severe winter smog. Surface inversions trap toxic vehicle exhaust at ground level before 10 AM. Substitute with indoor stretching in a purified room.';
   }
 
-  if (q.includes('mask') || q.includes('n95') || q.includes('commute') || q.includes('travel') || q.includes('office')) {
+  if (
+    q.includes('mask') ||
+    q.includes('n95') ||
+    q.includes('commute') ||
+    q.includes('travel') ||
+    q.includes('office')
+  ) {
     if (isHi) {
       return 'Bahaar nikalte waqt snug-fitting N95 mask zaroor pehnein. Gaadi mein AC recirculation mode on rakhein aur metro ka upyog karein jahan cabin air filtered rehti hai.';
     }

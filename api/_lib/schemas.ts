@@ -2,7 +2,9 @@ import { z } from 'zod';
 
 export const PlanOutputSchema = z.object({
   headline: z.string().default('Personalized Protective Family Protocol'),
-  summary: z.string().default('Tailored protocol designed to minimize household inhalation during peak smog hours.'),
+  summary: z
+    .string()
+    .default('Tailored protocol designed to minimize household inhalation during peak smog hours.'),
   riskLevel: z.enum(['low', 'moderate', 'high', 'severe']).catch('high'),
   timeline: z
     .array(

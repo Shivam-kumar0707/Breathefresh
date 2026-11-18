@@ -17,12 +17,10 @@ export const SmogSlider: React.FC = () => {
             <SlidersIcon className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-bold text-slate-900 text-sm sm:text-base">
+            <h2 className="font-bold text-slate-900 text-sm sm:text-base">
               {STRINGS.whatIf.smogSliderTitle}
-            </h3>
-            <p className="text-xs text-slate-500">
-              {STRINGS.whatIf.smogSliderSub}
-            </p>
+            </h2>
+            <p className="text-xs text-slate-500">{STRINGS.whatIf.smogSliderSub}</p>
           </div>
         </div>
 
@@ -30,7 +28,7 @@ export const SmogSlider: React.FC = () => {
           <button
             type="button"
             onClick={() => setSmogOverride(null)}
-            className="text-xs font-semibold text-teal-700 hover:text-teal-900 bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-200"
+            className="text-xs font-semibold text-teal-800 hover:text-teal-950 bg-teal-50 px-3 py-1.5 rounded-lg border border-teal-300 min-h-[36px]"
           >
             Reset to Live ({Math.round(currentAmbient)} µg/m³)
           </button>
@@ -38,26 +36,42 @@ export const SmogSlider: React.FC = () => {
       </div>
 
       <div className="space-y-2 pt-2">
-        <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
+        <div className="flex items-center justify-between text-xs font-semibold text-slate-800">
           <span>Clean Day (50 µg/m³)</span>
-          <span className="text-lg font-black font-mono text-teal-800 bg-teal-50 px-3 py-1 rounded-lg border border-teal-200">
+          <span className="text-lg font-black font-mono text-teal-900 bg-teal-50 px-3 py-1 rounded-lg border border-teal-300">
             {activeValue} µg/m³
           </span>
-          <span className="text-rose-700">Severe Smog (500 µg/m³)</span>
+          <span className="text-rose-800 font-bold">Severe Smog (500 µg/m³)</span>
         </div>
 
         <input
           type="range"
+          role="slider"
+          aria-label="Outdoor PM2.5 concentration level slider"
+          aria-valuemin={50}
+          aria-valuemax={500}
+          aria-valuenow={activeValue}
+          aria-valuetext={`${activeValue} micrograms per cubic meter, ${
+            activeValue > 400
+              ? 'Emergency Severe Plus'
+              : activeValue > 300
+                ? 'Severe'
+                : activeValue > 200
+                  ? 'Very Poor'
+                  : activeValue > 100
+                    ? 'Poor'
+                    : 'Moderate'
+          }`}
           data-testid="smog-slider"
           min={50}
           max={500}
           step={10}
           value={activeValue}
           onChange={(e) => setSmogOverride(parseInt(e.target.value))}
-          className="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-teal-600 focus:outline-none"
+          className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-600 min-h-[44px]"
         />
 
-        <div className="flex justify-between text-[11px] text-slate-400 font-mono">
+        <div className="flex justify-between text-[11px] text-slate-600 font-mono font-medium">
           <span>Good / Moderate</span>
           <span>Poor</span>
           <span>Very Poor</span>

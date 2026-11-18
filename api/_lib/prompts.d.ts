@@ -6,4 +6,8 @@ export declare function getExplainSystemPrompt(language?: string): string;
 export declare function getChatSystemPrompt(contextPackStr: string, language?: string): string;
 export declare const RED_FLAG_KEYWORDS: string[];
 export declare function hasRedFlagSymptoms(text: string): boolean;
-export declare function getDynamicChatFallback(userQuery: string, _contextPack?: string, language?: string): string;
+export declare function getDynamicChatFallback(
+  userQuery: string,
+  _contextPack?: string,
+  language?: string
+): string;

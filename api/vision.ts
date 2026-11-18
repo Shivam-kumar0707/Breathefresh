@@ -8,7 +8,19 @@ const VisionInputSchema = z.object({
   imageBase64: z.string().min(10).max(2800000), // ~2MB raw image
 });
 
-export default async function handler(req: IncomingMessage & { body?: unknown }, res: ServerResponse) {
+/**
+ * Serverless API handler for /api/vision.
+ * Performs multimodal room scan analysis using Llama 4 Scout on Groq.
+ * Detects indoor pollution hazards (unvented gas burners, incense, open windows, smoking)
+ * and recommends targeted actions from the Impact Engine catalog.
+ *
+ * @param req - Incoming HTTP request with base64-encoded JPEG/PNG image.
+ * @param res - Outgoing server response with structured findings, room type, and suggested action IDs.
+ */
+export default async function handler(
+  req: IncomingMessage & { body?: unknown },
+  res: ServerResponse
+) {
   res.setHeader('Access-Control-Allow-Origin', GROQ_CONFIG.allowedOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -33,7 +45,12 @@ export default async function handler(req: IncomingMessage & { body?: unknown },
     res.statusCode = 429;
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Retry-After', String(rateCheck.resetInSec));
-    res.end(JSON.stringify({ error: 'Too many image scan requests. Please wait a moment.', retryAfter: rateCheck.resetInSec }));
+    res.end(
+      JSON.stringify({
+        error: 'Too many image scan requests. Please wait a moment.',
+        retryAfter: rateCheck.resetInSec,
+      })
+    );
     return;
   }
 
@@ -92,8 +109,10 @@ export default async function handler(req: IncomingMessage & { body?: unknown },
         note: 'Purifiers placed tight against a wall or heavy curtains suffer reduced intake airflow.',
       },
     ],
-    purifierSpot: 'Place the purifier 1.5–2 feet away from walls, centrally located in the breathing zone.',
-    ventilationNotes: 'Keep windows latched tight during morning inversion hours; open for 15 mins around 2 PM.',
+    purifierSpot:
+      'Place the purifier 1.5–2 feet away from walls, centrally located in the breathing zone.',
+    ventilationNotes:
+      'Keep windows latched tight during morning inversion hours; open for 15 mins around 2 PM.',
     suggestedActionIds: ['seal_gaps', 'purifier_bedroom', 'ventilate_best_window_only'],
   };
 
@@ -116,7 +135,10 @@ export default async function handler(req: IncomingMessage & { body?: unknown },
         {
           role: 'user',
           content: [
-            { type: 'text', text: 'Analyze this room photo for air quality and purifier placement.' },
+            {
+              type: 'text',
+              text: 'Analyze this room photo for air quality and purifier placement.',
+            },
             {
               type: 'image_url',
               image_url: {

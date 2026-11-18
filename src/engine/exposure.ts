@@ -14,7 +14,7 @@ export type Place = 'home' | 'work_school' | 'outdoor' | 'commute';
 
 export interface Block {
   startHour: number; // 0..23
-  endHour: number;   // 1..24
+  endHour: number; // 1..24
   place: Place;
   activity: keyof typeof BREATHING;
   commuteMode?: keyof typeof COMMUTE_FACTOR;
@@ -45,8 +45,8 @@ export interface MemberExposure {
   name: string;
   hourly: number[]; // hourly dose (C(h) * breathing * (1 - mask))
   hourlyConcentration: number[]; // microenvironment C(h)
-  ei: number;       // Exposure Index: 24h mean breathing-weighted concentration
-  cigEq: number;    // EI / CIG_PM25
+  ei: number; // Exposure Index: 24h mean breathing-weighted concentration
+  cigEq: number; // EI / CIG_PM25
   riskScore: number;
   band: Band;
   byPlace: Record<Place, number>; // contribution to EI by location
@@ -84,8 +84,14 @@ export function getRiskBand(riskScore: number): Band {
 }
 
 /**
- * Computes exposure for a specific member under a scenario.
- * Pure function: no mutation, deterministic.
+ * Computes individual fine-particulate dose for a specific family member across all 24 hours.
+ * Multiplies microenvironmental concentration C(h) by physical activity breathing volume and mask factor:
+ *   Dose(h) = C_microenv(h) * BreathingMult(activity) * (1 - MaskEfficiency)
+ * Pure deterministic calculation.
+ *
+ * @param scenario - The holistic family and environmental scenario.
+ * @param memberId - Target member's unique identifier.
+ * @returns Complete MemberExposure profile with hourly dose series, EI, cigarette equivalents, and risk score.
  */
 export function computeExposure(scenario: Scenario, memberId: string): MemberExposure {
   const member = scenario.members.find((m) => m.id === memberId);
@@ -106,9 +112,7 @@ export function computeExposure(scenario: Scenario, memberId: string): MemberExp
 
   // Build a lookup for hour -> block (defaulting to home rest if unspecified)
   for (let h = 0; h < 24; h++) {
-    const matchingBlock = member.blocks.find(
-      (b) => h >= b.startHour && h < b.endHour
-    );
+    const matchingBlock = member.blocks.find((b) => h >= b.startHour && h < b.endHour);
 
     const place: Place = matchingBlock ? matchingBlock.place : 'home';
     const activity = matchingBlock ? matchingBlock.activity : 'rest';
@@ -173,7 +177,11 @@ export function computeExposure(scenario: Scenario, memberId: string): MemberExp
 }
 
 /**
- * Computes exposure across all family members in the scenario.
+ * Computes collective household exposure metrics across all members.
+ * Aggregates cumulative cigarette equivalents, calculates mean family Exposure Index, and identifies peak vulnerability band.
+ *
+ * @param scenario - Family scenario containing all member schedules, home parameters, and outdoor air quality.
+ * @returns FamilyExposureResult containing per-member breakdown, total household cigarette equivalents, and max band.
  */
 export function familyExposure(scenario: Scenario): FamilyExposureResult {
   const perMember: Record<string, MemberExposure> = {};

@@ -41,6 +41,15 @@ import { checkRateLimit, getClientIp } from './_lib/rateLimit';
 var VisionInputSchema = z.object({
     imageBase64: z.string().min(10).max(2800000), // ~2MB raw image
 });
+/**
+ * Serverless API handler for /api/vision.
+ * Performs multimodal room scan analysis using Llama 4 Scout on Groq.
+ * Detects indoor pollution hazards (unvented gas burners, incense, open windows, smoking)
+ * and recommends targeted actions from the Impact Engine catalog.
+ *
+ * @param req - Incoming HTTP request with base64-encoded JPEG/PNG image.
+ * @param res - Outgoing server response with structured findings, room type, and suggested action IDs.
+ */
 export default function handler(req, res) {
     return __awaiter(this, void 0, void 0, function () {
         var clientIp, rateCheck, bodyData, parsed, fallbackVisionResponse, groqRes, groqJson, rawContent, parsedVision, err_1;
@@ -68,7 +77,10 @@ export default function handler(req, res) {
                         res.statusCode = 429;
                         res.setHeader('Content-Type', 'application/json');
                         res.setHeader('Retry-After', String(rateCheck.resetInSec));
-                        res.end(JSON.stringify({ error: 'Too many image scan requests. Please wait a moment.', retryAfter: rateCheck.resetInSec }));
+                        res.end(JSON.stringify({
+                            error: 'Too many image scan requests. Please wait a moment.',
+                            retryAfter: rateCheck.resetInSec,
+                        }));
                         return [2 /*return*/];
                     }
                     bodyData = req.body;
@@ -149,7 +161,10 @@ export default function handler(req, res) {
                                 {
                                     role: 'user',
                                     content: [
-                                        { type: 'text', text: 'Analyze this room photo for air quality and purifier placement.' },
+                                        {
+                                            type: 'text',
+                                            text: 'Analyze this room photo for air quality and purifier placement.',
+                                        },
                                         {
                                             type: 'image_url',
                                             image_url: {

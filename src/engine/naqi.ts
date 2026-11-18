@@ -3,13 +3,7 @@
  * Following Central Pollution Control Board (CPCB) official guidelines.
  */
 
-export type NaqiCategory =
-  | 'Good'
-  | 'Satisfactory'
-  | 'Moderate'
-  | 'Poor'
-  | 'Very Poor'
-  | 'Severe';
+export type NaqiCategory = 'Good' | 'Satisfactory' | 'Moderate' | 'Poor' | 'Very Poor' | 'Severe';
 
 export interface NaqiBreakpoint {
   cLow: number;
@@ -38,7 +32,10 @@ const PM10_BREAKPOINTS: NaqiBreakpoint[] = [
   { cLow: 431, cHigh: 600, iLow: 401, iHigh: 500, category: 'Severe', color: '#9333ea' },
 ];
 
-function interpolateSubIndex(val: number, breakpoints: NaqiBreakpoint[]): { index: number; category: NaqiCategory; color: string } {
+function interpolateSubIndex(
+  val: number,
+  breakpoints: NaqiBreakpoint[]
+): { index: number; category: NaqiCategory; color: string } {
   if (val <= 0) {
     return { index: 0, category: 'Good', color: '#16a34a' };
   }
@@ -54,7 +51,10 @@ function interpolateSubIndex(val: number, breakpoints: NaqiBreakpoint[]): { inde
 
   // Value exceeds highest breakpoint range
   const last = breakpoints[breakpoints.length - 1];
-  const extrapolated = Math.min(500, Math.round(401 + ((val - last.cLow) / (last.cHigh - last.cLow)) * 99));
+  const extrapolated = Math.min(
+    500,
+    Math.round(401 + ((val - last.cLow) / (last.cHigh - last.cLow)) * 99)
+  );
   return { index: extrapolated, category: 'Severe', color: '#9333ea' };
 }
 
@@ -68,11 +68,19 @@ export interface NaqiResult {
 }
 
 /**
- * Computes India NAQI from 24h rolling PM2.5 and PM10 concentrations.
+ * Computes India NAQI (National Air Quality Index) from 24h rolling PM2.5 and PM10 concentrations.
+ * Strictly adheres to Central Pollution Control Board (CPCB) breakpoint matrices.
+ *
+ * @param pm25 - 24-hour average PM2.5 concentration in µg/m³.
+ * @param pm10 - Optional 24-hour average PM10 concentration in µg/m³.
+ * @returns Complete NaqiResult with overall AQI, responsible pollutant, official category, and color code.
  */
 export function calculateNaqi(pm25: number, pm10: number = 0): NaqiResult {
   const pm25Res = interpolateSubIndex(pm25, PM25_BREAKPOINTS);
-  const pm10Res = pm10 > 0 ? interpolateSubIndex(pm10, PM10_BREAKPOINTS) : { index: 0, category: 'Good' as NaqiCategory, color: '#16a34a' };
+  const pm10Res =
+    pm10 > 0
+      ? interpolateSubIndex(pm10, PM10_BREAKPOINTS)
+      : { index: 0, category: 'Good' as NaqiCategory, color: '#16a34a' };
 
   if (pm25Res.index >= pm10Res.index) {
     return {

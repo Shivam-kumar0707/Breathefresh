@@ -7,10 +7,12 @@ export const STRINGS = {
   app: {
     name: 'BreatheFresh',
     tagline: 'Know your air. Plan your day.',
-    heroValue: 'Personalized Family Air Plans for smog-hit cities. Calculate indoor exposure, compare what-if actions, and lower your daily pollution dose.',
+    heroValue:
+      'Personalized Family Air Plans for smog-hit cities. Calculate indoor exposure, compare what-if actions, and lower your daily pollution dose.',
     tryDemoBtn: 'Try demo family (Sharma, Ghaziabad)',
     buildPlanBtn: 'Build my Air Plan',
-    notMedicalAdvice: 'BreatheFresh provides exposure estimates and indoor planning tools based on published scientific models. It does not provide medical advice, diagnosis, or treatment.',
+    notMedicalAdvice:
+      'BreatheFresh provides exposure estimates and indoor planning tools based on published scientific models. It does not provide medical advice, diagnosis, or treatment.',
     disclaimerShort: 'Not medical advice. For persistent symptoms, consult a physician.',
     scienceBadge: 'Science-Backed · Deterministic Impact Engine',
   },
@@ -41,15 +43,18 @@ export const STRINGS = {
     worstWindow: 'Peak Smog Window',
     worstWindowSub: 'Stay indoors, keep purifiers running, wear N95 if commuting',
     inversionAlert: 'Thermal Inversion Risk Detected',
-    inversionDesc: 'Low boundary layer height (<250m) and calm winds are trapping vehicle exhausts at ground level.',
+    inversionDesc:
+      'Low boundary layer height (<250m) and calm winds are trapping vehicle exhausts at ground level.',
     grapStageBadge: 'Estimated GRAP Stage',
     caqmOfficialLink: 'View Official CAQM Orders',
-    caqmNotice: 'Official GRAP restrictions are declared by CAQM based on dynamic meteorological forecasts.',
+    caqmNotice:
+      'Official GRAP restrictions are declared by CAQM based on dynamic meteorological forecasts.',
   },
   hero: {
     inhaledLabel: 'Your family inhaled the equivalent of',
     cigarettesToday: 'cigarettes today',
-    cigaretteApproxNote: 'Approximate exposure heuristic based on Berkeley Earth model (22 µg/m³ of 24h PM2.5 ≈ 1 cigarette).',
+    cigaretteApproxNote:
+      'Approximate exposure heuristic based on Berkeley Earth model (22 µg/m³ of 24h PM2.5 ≈ 1 cigarette).',
     averageExposureIndex: 'Family Exposure Index (EI)',
     riskLevel: 'Family Risk Level',
   },
@@ -67,7 +72,8 @@ export const STRINGS = {
     title: 'What-If Simulator & Action Impact',
     subtitle: 'Toggle actions to see immediate changes in lung dose and greenhouse emissions',
     smogSliderTitle: 'Smog Simulator (Outdoor PM2.5 Override)',
-    smogSliderSub: 'Test how your home and commute hold up as ambient smog spikes from 50 to 500 µg/m³',
+    smogSliderSub:
+      'Test how your home and commute hold up as ambient smog spikes from 50 to 500 µg/m³',
     baselineVsPlan: 'Baseline vs. With Plan Exposure',
     forecast7Day: '7-Day Outlook: Follow Plan vs. Do Nothing',
     exposureReduction: 'Exposure Reduction',
@@ -89,17 +95,20 @@ export const STRINGS = {
       'Which room purifier CADR do I need for a 150 sq ft bedroom?',
       'Is my wet-mopping really helping reduce PM2.5?',
     ],
-    redFlagWarning: 'CRITICAL HEALTH ALERT: Chest pain, severe breathlessness, and fainting require immediate professional medical attention. Please contact emergency services or visit the nearest hospital emergency department right now.',
+    redFlagWarning:
+      'CRITICAL HEALTH ALERT: Chest pain, severe breathlessness, and fainting require immediate professional medical attention. Please contact emergency services or visit the nearest hospital emergency department right now.',
   },
   indoorHacks: {
     tabTitle: 'Indoor Hacks & Sizing',
     cadrCalcTitle: 'Purifier CADR Sizing Calculator',
-    cadrCalcDesc: 'Calculate the minimum Clean Air Delivery Rate needed for 4 to 5 air changes per hour (ACH).',
+    cadrCalcDesc:
+      'Calculate the minimum Clean Air Delivery Rate needed for 4 to 5 air changes per hour (ACH).',
     roomAreaLabel: 'Room Floor Area (sq. ft.)',
     ceilingHeightLabel: 'Ceiling Height (ft)',
     recommendedCadr: 'Recommended CADR (m³/h)',
     diyCorsiTitle: 'DIY Corsi-Rosenthal Box Purifier (₹2,200)',
-    diyCorsiDesc: 'A scientifically validated air cleaner using 4 MERV-13 filters and a standard box fan. Cleans 450+ m³/h.',
+    diyCorsiDesc:
+      'A scientifically validated air cleaner using 4 MERV-13 filters and a standard box fan. Cleans 450+ m³/h.',
     mythBustersTitle: 'Indoor Air Myth-Busters',
   },
   alternatives: {
@@ -121,13 +130,16 @@ export const STRINGS = {
     co2eSavedTotal: 'Total CO₂e Saved',
     shareCardBtn: 'Generate Share Card',
     whatsappShareBtn: 'Share on WhatsApp',
-    anonymousNotice: 'No accounts or phone numbers. Only anonymous nicknames and emojis are shared.',
+    anonymousNotice:
+      'No accounts or phone numbers. Only anonymous nicknames and emojis are shared.',
   },
   method: {
     title: 'How We Calculate: Impact Engine Specifications',
-    subtitle: 'Transparent, deterministic physics and epidemiological heuristics. Zero LLM hallucinations.',
+    subtitle:
+      'Transparent, deterministic physics and epidemiological heuristics. Zero LLM hallucinations.',
     disclaimerHeader: 'Important Scientific & Medical Disclaimer',
     numberGuardTitle: 'The BreatheFresh Number Guard',
-    numberGuardDesc: 'Every number displayed in this application is calculated deterministically by pure client-side TypeScript functions. The Groq LLM selects appropriate action IDs from our Action Catalog and provides natural language explanations, but is strictly guarded from computing or guessing numeric figures.',
+    numberGuardDesc:
+      'Every number displayed in this application is calculated deterministically by pure client-side TypeScript functions. The Groq LLM selects appropriate action IDs from our Action Catalog and provides natural language explanations, but is strictly guarded from computing or guessing numeric figures.',
   },
 } as const;

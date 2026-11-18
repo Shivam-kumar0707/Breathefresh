@@ -39,9 +39,7 @@ export const Onboard: React.FC = () => {
           BreatheFresh
         </h1>
 
-        <p className="text-lg sm:text-xl font-medium text-teal-700">
-          {STRINGS.app.tagline}
-        </p>
+        <p className="text-lg sm:text-xl font-medium text-teal-700">{STRINGS.app.tagline}</p>
 
         <p className="max-w-2xl mx-auto text-sm sm:text-base text-slate-600 leading-relaxed">
           {STRINGS.app.heroValue}
@@ -53,7 +51,7 @@ export const Onboard: React.FC = () => {
             type="button"
             data-testid="demo-button"
             onClick={() => handleTryDemo('sharma-ghaziabad')}
-            className="w-full sm:w-auto px-6 py-3.5 text-base font-bold text-white bg-teal-600 hover:bg-teal-700 active:bg-teal-800 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+            className="w-full sm:w-auto px-6 py-3.5 text-base font-bold text-white bg-teal-700 hover:bg-teal-800 active:bg-teal-900 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 min-h-[44px]"
           >
             <SparklesIcon className="w-5 h-5" />
             {STRINGS.app.tryDemoBtn}
@@ -63,7 +61,7 @@ export const Onboard: React.FC = () => {
             type="button"
             data-testid="build-plan-button"
             onClick={handleBuildPlan}
-            className="w-full sm:w-auto px-6 py-3.5 text-base font-bold text-teal-800 bg-white hover:bg-slate-50 border border-teal-600 rounded-xl transition-colors"
+            className="w-full sm:w-auto px-6 py-3.5 text-base font-bold text-teal-800 bg-white hover:bg-slate-50 border border-teal-700 rounded-xl transition-colors min-h-[44px]"
           >
             {STRINGS.app.buildPlanBtn} →
           </button>
@@ -73,10 +71,10 @@ export const Onboard: React.FC = () => {
       {/* Preset Demo Personas Carousel / Selector */}
       <section className="bg-slate-100/70 p-4 rounded-2xl border border-slate-200 space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
             One-Tap Demo Personas (Sample Profiles)
           </span>
-          <span className="text-xs text-slate-400">Zero config needed</span>
+          <span className="text-xs text-slate-600">Zero config needed</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -85,19 +83,17 @@ export const Onboard: React.FC = () => {
               key={p.id}
               type="button"
               onClick={() => handleTryDemo(p.id)}
-              className="p-3.5 text-left rounded-xl bg-white hover:bg-teal-50 border border-slate-200 hover:border-teal-300 transition-all space-y-1 shadow-sm group"
+              className="p-3.5 text-left rounded-xl bg-white hover:bg-teal-50 border border-slate-200 hover:border-teal-300 transition-all space-y-1 shadow-xs group min-h-[44px]"
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-900 group-hover:text-teal-800">
                   {p.name}
                 </span>
-                <span className="text-xs text-teal-600 font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="text-xs text-teal-700 font-bold opacity-0 group-hover:opacity-100 transition-opacity">
                   Load →
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 line-clamp-2">
-                {p.description}
-              </p>
+              <p className="text-[11px] text-slate-600 line-clamp-2">{p.description}</p>
             </button>
           ))}
         </div>
@@ -105,8 +101,8 @@ export const Onboard: React.FC = () => {
 
       {/* City Search */}
       <section className="space-y-2">
-        <label className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
-          <WindIcon className="w-4 h-4 text-teal-600" />
+        <label className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+          <WindIcon className="w-4 h-4 text-teal-700" />
           Location & Smog Zone
         </label>
         <CitySearch />
@@ -122,7 +118,7 @@ export const Onboard: React.FC = () => {
         <button
           type="button"
           onClick={handleBuildPlan}
-          className="w-full sm:w-auto px-8 py-3.5 text-base font-bold text-white bg-teal-600 hover:bg-teal-700 rounded-xl shadow-md hover:shadow-lg transition-all"
+          className="w-full sm:w-auto px-8 py-3.5 text-base font-bold text-white bg-teal-700 hover:bg-teal-800 rounded-xl shadow-md hover:shadow-lg transition-all min-h-[44px]"
         >
           {STRINGS.app.buildPlanBtn} →
         </button>

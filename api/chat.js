@@ -57,9 +57,18 @@ var ChatInputSchema = z.object({
     contextPack: z.string().max(3000),
     language: z.enum(['en', 'hi', 'hinglish']).default('en'),
 });
+/**
+ * Serverless API handler for /api/chat.
+ * Provides Server-Sent Events (SSE) streaming conversational answers to user smog questions.
+ * Enforces medical safety rules, prompt-injection defenses, strict IP rate limiting,
+ * and falls back cleanly to context-aware local generation if the external model is unavailable.
+ *
+ * @param req - Incoming HTTP request with conversation messages and air context.
+ * @param res - Outgoing server response streaming SSE chunks.
+ */
 export default function handler(req, res) {
     return __awaiter(this, void 0, void 0, function () {
-        var clientIp, rateCheck, bodyData, parsed, _a, messages, contextPack, language, lastUserMsg, isRedFlag, alertMsg, fallbackMsg, systemPrompt, groqMessages, groqRes, bodyAny, reader, decoder, streamBuffer, _b, done, value, lines, _i, lines_1, line, trimmed, jsonStr, parsedChunk, deltaToken, streamBuffer_1, err_1, errorFallback;
+        var clientIp, rateCheck, bodyData, parsed, _a, messages, contextPack, language, lastUserMsg, isRedFlag, alertMsg, fallbackMsg, systemPrompt, groqMessages, groqRes, streamBody, reader, decoder, streamBuffer, _b, done, value, lines, _i, lines_1, line, trimmed, jsonStr, parsedChunk, deltaToken, streamBuffer_1, err_1, errorFallback;
         var _c, _d, _e, _f, _g;
         return __generator(this, function (_h) {
             switch (_h.label) {
@@ -84,7 +93,10 @@ export default function handler(req, res) {
                         res.statusCode = 429;
                         res.setHeader('Content-Type', 'application/json');
                         res.setHeader('Retry-After', String(rateCheck.resetInSec));
-                        res.end(JSON.stringify({ error: 'Too many requests. Please wait a moment.', retryAfter: rateCheck.resetInSec }));
+                        res.end(JSON.stringify({
+                            error: 'Too many requests. Please wait a moment.',
+                            retryAfter: rateCheck.resetInSec,
+                        }));
                         return [2 /*return*/];
                     }
                     bodyData = req.body;
@@ -168,9 +180,9 @@ export default function handler(req, res) {
                     if (!groqRes.ok || !groqRes.body) {
                         throw new Error("Groq returned ".concat(groqRes.status));
                     }
-                    bodyAny = groqRes.body;
-                    if (!(typeof (bodyAny === null || bodyAny === void 0 ? void 0 : bodyAny.getReader) === 'function')) return [3 /*break*/, 8];
-                    reader = bodyAny.getReader();
+                    streamBody = groqRes.body;
+                    if (!(typeof (streamBody === null || streamBody === void 0 ? void 0 : streamBody.getReader) === 'function')) return [3 /*break*/, 8];
+                    reader = streamBody.getReader();
                     decoder = new TextDecoder('utf-8');
                     streamBuffer = '';
                     _h.label = 5;
@@ -209,9 +221,9 @@ export default function handler(req, res) {
                     res.end();
                     return [3 /*break*/, 9];
                 case 8:
-                    if (typeof (bodyAny === null || bodyAny === void 0 ? void 0 : bodyAny.on) === 'function') {
+                    if (typeof (streamBody === null || streamBody === void 0 ? void 0 : streamBody.on) === 'function') {
                         streamBuffer_1 = '';
-                        bodyAny.on('data', function (chunk) {
+                        streamBody.on('data', function (chunk) {
                             var _a, _b, _c, _d;
                             streamBuffer_1 += chunk.toString('utf-8');
                             var lines = streamBuffer_1.split('\n');
@@ -236,11 +248,11 @@ export default function handler(req, res) {
                                 }
                             }
                         });
-                        bodyAny.on('end', function () {
+                        streamBody.on('end', function () {
                             res.write('data: [DONE]\n\n');
                             res.end();
                         });
-                        bodyAny.on('error', function (err) {
+                        streamBody.on('error', function (err) {
                             console.warn('Groq stream error:', err);
                             res.end();
                         });

@@ -50,6 +50,14 @@ var ExplainInputSchema = z.object({
     memberContext: z.string().max(300).optional(),
     language: z.enum(['en', 'hi', 'hinglish']).default('en'),
 });
+/**
+ * Serverless API handler for /api/explain.
+ * Generates plain-language, non-technical explanations of specific air actions and their physical impact.
+ * Validates against ExplainOutputSchema with strict fallback if Groq is unavailable.
+ *
+ * @param req - Incoming HTTP request with action ID, title, and quantitative deltas.
+ * @param res - Outgoing server response with structured explanation and key takeaway.
+ */
 export default function handler(req, res) {
     return __awaiter(this, void 0, void 0, function () {
         var clientIp, rateCheck, bodyData, parsed, input, userContent, groqRes, json, parsedExplain, err_1;
@@ -77,7 +85,10 @@ export default function handler(req, res) {
                         res.statusCode = 429;
                         res.setHeader('Content-Type', 'application/json');
                         res.setHeader('Retry-After', String(rateCheck.resetInSec));
-                        res.end(JSON.stringify({ error: 'Too many requests. Please wait a moment.', retryAfter: rateCheck.resetInSec }));
+                        res.end(JSON.stringify({
+                            error: 'Too many requests. Please wait a moment.',
+                            retryAfter: rateCheck.resetInSec,
+                        }));
                         return [2 /*return*/];
                     }
                     bodyData = req.body;

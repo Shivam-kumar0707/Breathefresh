@@ -27,7 +27,10 @@ export interface CallGroqParams {
     temperature?: number;
 }
 /**
- * Executes a call to Groq's OpenAI-compatible completions endpoint.
- * Features 20s abort timeout and 1 automatic retry on 429/5xx.
+ * Executes an HTTP call to Groq's completions endpoint.
+ * Features 20s abort timeout and 1 automatic retry on 429/5xx responses.
+ *
+ * @param params - Call configuration including model ID, messages array, JSON mode flag, and token limits.
+ * @returns Standard fetch Response object.
  */
 export declare function callGroq({ model, messages, json, stream, maxTokens, temperature, }: CallGroqParams): Promise<Response>;

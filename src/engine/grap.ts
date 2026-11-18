@@ -93,6 +93,10 @@ export const CAQM_OFFICIAL_URL = 'https://caqm.nic.in/';
 
 /**
  * Checks whether a given city/region name falls within Delhi NCR jurisdiction.
+ * Matches normalized substrings against the statutory list of NCR districts.
+ *
+ * @param cityName - The city or district name to inspect.
+ * @returns Boolean indicating whether the location is within Delhi NCR.
  */
 export function isNcrCity(cityName: string): boolean {
   if (!cityName) return false;
@@ -101,8 +105,15 @@ export function isNcrCity(cityName: string): boolean {
 }
 
 /**
- * Estimates active GRAP stage based on NAQI value.
- * Note: Official GRAP stage is notified by CAQM and may be triggered proactively.
+ * Estimates the active CAQM GRAP (Graded Response Action Plan) stage based on NAQI level.
+ * Stages:
+ * - Stage I (Poor): AQI 201-300
+ * - Stage II (Very Poor): AQI 301-400
+ * - Stage III (Severe): AQI 401-450
+ * - Stage IV (Severe Plus): AQI > 450
+ *
+ * @param aqi - India National Air Quality Index value.
+ * @returns GrapStageInfo with stage name, emergency restrictions, and badge styles, or null if below 201.
  */
 export function estimateGrapStage(aqi: number): GrapStageInfo | null {
   if (aqi > 450) return GRAP_STAGES['Stage IV'];

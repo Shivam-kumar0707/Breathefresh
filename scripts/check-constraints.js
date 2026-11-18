@@ -13,9 +13,7 @@ const FORBIDDEN_PATTERNS_ALL = [
   'VITE_GROQ',
 ];
 
-const FORBIDDEN_IN_SRC_ONLY = [
-  'GROQ_API_KEY',
-];
+const FORBIDDEN_IN_SRC_ONLY = ['GROQ_API_KEY'];
 
 const scanDirs = ['src', 'api'];
 const violations = [];

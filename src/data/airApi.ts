@@ -104,9 +104,11 @@ export function processAirData(
 
   // Compute NAQI from current or latest rolling 24h
   const rollingPm25Avg =
-    hoursPm25.slice(0, 24).reduce((sum, v) => sum + v, 0) / Math.max(1, Math.min(24, hoursPm25.length));
+    hoursPm25.slice(0, 24).reduce((sum, v) => sum + v, 0) /
+    Math.max(1, Math.min(24, hoursPm25.length));
   const rollingPm10Avg =
-    hoursPm10.slice(0, 24).reduce((sum, v) => sum + v, 0) / Math.max(1, Math.min(24, hoursPm10.length));
+    hoursPm10.slice(0, 24).reduce((sum, v) => sum + v, 0) /
+    Math.max(1, Math.min(24, hoursPm10.length));
 
   const naqi = calculateNaqi(rollingPm25Avg, rollingPm10Avg);
 
@@ -115,9 +117,8 @@ export function processAirData(
   const grapStage = isNcr ? estimateGrapStage(naqi.aqi) : null;
 
   // Next 24-hour horizon for the daily plan
-  const today24hPm25 = hoursPm25.slice(24, 48).length === 24
-    ? hoursPm25.slice(24, 48)
-    : hoursPm25.slice(0, 24);
+  const today24hPm25 =
+    hoursPm25.slice(24, 48).length === 24 ? hoursPm25.slice(24, 48) : hoursPm25.slice(0, 24);
 
   // Identify best window (lowest PM2.5) and worst window (highest PM2.5) in the next 24 hours
   let minPm = Infinity;
@@ -198,7 +199,9 @@ export function processAirData(
     today24hPm25,
     forecastDays,
     isSampleData,
-    dataSourceLabel: isSampleData ? 'Offline Sample Data (Fallback Snapshot)' : 'Live Open-Meteo Air Quality API',
+    dataSourceLabel: isSampleData
+      ? 'Offline Sample Data (Fallback Snapshot)'
+      : 'Live Open-Meteo Air Quality API',
   };
 }
 

@@ -78,7 +78,10 @@ export async function fetchDailyPlan(
       worstWindow: air.worstWindow.timeLabel,
     },
     profileSummary: `${scenario.members.length} members (${scenario.members
-      .map((m) => `${m.name} [${m.ageGroup}${m.conditions.length ? `, ${m.conditions.join('/')}` : ''}]`)
+      .map(
+        (m) =>
+          `${m.name} [${m.ageGroup}${m.conditions.length ? `, ${m.conditions.join('/')}` : ''}]`
+      )
       .join(', ')}), ${scenario.home.areaM2}m² home, windows: ${scenario.home.windows}.`,
     applicableActions: applicableImpacts.map((i) => ({
       id: i.id,
@@ -129,16 +132,26 @@ export async function fetchDailyPlan(
     }
 
     // Apply the Number Guard on all text fields from LLM
-    const guardedTimeline = data.timeline.map((item: { startHour: number; endHour: number; title: string; actionId: string | null; why: string }) => ({
-      ...item,
-      why: sanitizeTextWithNumberGuard(item.why, allowedNumbers),
-    }));
+    const guardedTimeline = data.timeline.map(
+      (item: {
+        startHour: number;
+        endHour: number;
+        title: string;
+        actionId: string | null;
+        why: string;
+      }) => ({
+        ...item,
+        why: sanitizeTextWithNumberGuard(item.why, allowedNumbers),
+      })
+    );
 
-    const guardedMembers = data.members.map((m: { memberId: string; tips: string[]; avoid: string[] }) => ({
-      ...m,
-      tips: m.tips.map((t: string) => sanitizeTextWithNumberGuard(t, allowedNumbers)),
-      avoid: m.avoid.map((a: string) => sanitizeTextWithNumberGuard(a, allowedNumbers)),
-    }));
+    const guardedMembers = data.members.map(
+      (m: { memberId: string; tips: string[]; avoid: string[] }) => ({
+        ...m,
+        tips: m.tips.map((t: string) => sanitizeTextWithNumberGuard(t, allowedNumbers)),
+        avoid: m.avoid.map((a: string) => sanitizeTextWithNumberGuard(a, allowedNumbers)),
+      })
+    );
 
     return {
       headline: sanitizeTextWithNumberGuard(data.headline, allowedNumbers),

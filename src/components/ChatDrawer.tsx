@@ -2,14 +2,32 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '../store/useStore';
 import { STRINGS } from '../i18n/en';
 import { hasRedFlagSymptoms } from '../../api/_lib/prompts';
-import { SendIcon, MicIcon, CloseIcon, SparklesIcon, AlertTriangleIcon } from './icons';
+import { CloseIcon, SparklesIcon, AlertTriangleIcon } from './icons';
+import { ChatMessageList, type ChatMessage } from './ChatMessageList';
+import { ChatInputForm } from './ChatInputForm';
 
-interface Message {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  isRedFlag?: boolean;
+type Message = ChatMessage;
+
+interface SpeechRecognitionResultItem {
+  transcript: string;
 }
+
+interface SpeechRecognitionEvent {
+  results: ArrayLike<ArrayLike<SpeechRecognitionResultItem>>;
+}
+
+interface SpeechRecognitionInstance {
+  lang: string;
+  interimResults: boolean;
+  maxAlternatives: number;
+  onresult: (event: SpeechRecognitionEvent) => void;
+  onerror: () => void;
+  onend: () => void;
+  start: () => void;
+  stop: () => void;
+}
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance;
 
 export const ChatDrawer: React.FC = () => {
   const { isChatOpen, setIsChatOpen, air, profile, plan, scenario } = useStore();
@@ -29,6 +47,15 @@ export const ChatDrawer: React.FC = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isStreaming]);
+
+  useEffect(() => {
+    if (!isChatOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsChatOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isChatOpen, setIsChatOpen]);
 
   if (!isChatOpen) return null;
 
@@ -70,10 +97,7 @@ CURRENT PLAN HEADLINE: ${plan?.headline ?? 'Rule-based protection'}`;
     setIsStreaming(true);
 
     const assistantMsgId = `assistant-${Date.now()}`;
-    setMessages((prev) => [
-      ...prev,
-      { id: assistantMsgId, role: 'assistant', content: '' },
-    ]);
+    setMessages((prev) => [...prev, { id: assistantMsgId, role: 'assistant', content: '' }]);
 
     try {
       const recentHistory = [...messages.slice(-5), userMsg].map((m) => ({
@@ -118,9 +142,7 @@ CURRENT PLAN HEADLINE: ${plan?.headline ?? 'Rule-based protection'}`;
             if (parsed.token) {
               setMessages((prev) =>
                 prev.map((msg) =>
-                  msg.id === assistantMsgId
-                    ? { ...msg, content: msg.content + parsed.token }
-                    : msg
+                  msg.id === assistantMsgId ? { ...msg, content: msg.content + parsed.token } : msg
                 )
               );
             }
@@ -150,27 +172,33 @@ CURRENT PLAN HEADLINE: ${plan?.headline ?? 'Rule-based protection'}`;
   };
 
   const handleVoiceInput = () => {
-    const SpeechRecognition =
-      (window as unknown as { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown })
-        .SpeechRecognition ||
-      (window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition;
+    const SpeechRecognitionClass =
+      (
+        window as unknown as {
+          SpeechRecognition?: SpeechRecognitionConstructor;
+          webkitSpeechRecognition?: SpeechRecognitionConstructor;
+        }
+      ).SpeechRecognition ||
+      (
+        window as unknown as {
+          webkitSpeechRecognition?: SpeechRecognitionConstructor;
+        }
+      ).webkitSpeechRecognition;
 
-    if (!SpeechRecognition) {
+    if (!SpeechRecognitionClass) {
       alert('Voice recognition is not supported in this browser. Please type your message.');
       return;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const recognition = new (SpeechRecognition as any)();
+    const recognition = new SpeechRecognitionClass();
     recognition.lang = profile.language === 'hi' ? 'hi-IN' : 'en-IN';
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
 
     setIsListening(true);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      const transcript = event.results[0]?.[0]?.transcript ?? '';
       setInput(transcript);
       setIsListening(false);
     };
@@ -187,19 +215,24 @@ CURRENT PLAN HEADLINE: ${plan?.headline ?? 'Rule-based protection'}`;
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/40 backdrop-blur-xs flex justify-end">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="chat-drawer-title"
+      className="fixed inset-0 z-50 overflow-hidden bg-slate-900/40 backdrop-blur-xs flex justify-end"
+    >
       <div className="w-full max-w-lg bg-white h-full shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-200">
         {/* Drawer Header */}
         <div className="p-4 sm:p-5 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-teal-600 text-white shadow-xs">
+            <div className="p-2 rounded-xl bg-teal-700 text-white shadow-xs">
               <SparklesIcon className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 text-base">
+              <h3 id="chat-drawer-title" className="font-bold text-slate-900 text-base">
                 {STRINGS.chat.drawerTitle}
               </h3>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-600">
                 Grounded in {profile.city.name} air data · Not medical advice
               </p>
             </div>
@@ -207,8 +240,9 @@ CURRENT PLAN HEADLINE: ${plan?.headline ?? 'Rule-based protection'}`;
 
           <button
             type="button"
+            aria-label="Close Clean Air Assistant chat drawer"
             onClick={() => setIsChatOpen(false)}
-            className="p-2 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-200 transition-colors"
+            className="p-2.5 text-slate-500 hover:text-slate-800 rounded-lg hover:bg-slate-200 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
           >
             <CloseIcon className="w-5 h-5" />
           </button>
@@ -228,29 +262,7 @@ CURRENT PLAN HEADLINE: ${plan?.headline ?? 'Rule-based protection'}`;
         )}
 
         {/* Message Stream */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.map((m) => (
-            <div
-              key={m.id}
-              className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`max-w-[85%] rounded-2xl px-4 py-3 text-xs sm:text-sm leading-relaxed ${
-                  m.role === 'user'
-                    ? 'bg-teal-600 text-white rounded-br-xs'
-                    : 'bg-slate-100 text-slate-800 rounded-bl-xs border border-slate-200'
-                }`}
-              >
-                {m.content || (
-                  <span className="inline-flex items-center gap-1 text-slate-400 italic">
-                    <span className="animate-spin text-xs">⌛</span> Thinking...
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
+        <ChatMessageList messages={messages} messagesEndRef={messagesEndRef} />
 
         {/* Suggestion Chips */}
         <div className="px-4 py-2 border-t border-slate-100 bg-slate-50/50 flex gap-2 overflow-x-auto no-scrollbar">
@@ -259,7 +271,7 @@ CURRENT PLAN HEADLINE: ${plan?.headline ?? 'Rule-based protection'}`;
               key={idx}
               type="button"
               onClick={() => handleSendMessage(s)}
-              className="px-2.5 py-1 text-[11px] font-medium text-slate-700 bg-white hover:bg-teal-50 border border-slate-200 hover:border-teal-300 rounded-full flex-shrink-0 transition-colors"
+              className="px-3 py-1.5 text-[11px] font-medium text-slate-800 bg-white hover:bg-teal-50 border border-slate-300 hover:border-teal-400 rounded-full flex-shrink-0 transition-colors min-h-[36px]"
             >
               {s}
             </button>
@@ -267,52 +279,14 @@ CURRENT PLAN HEADLINE: ${plan?.headline ?? 'Rule-based protection'}`;
         </div>
 
         {/* Input Bar */}
-        <div className="p-4 border-t border-slate-200 bg-white">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSendMessage(input);
-            }}
-            className="flex items-center gap-2"
-          >
-            <input
-              type="text"
-              data-testid="chat-input"
-              value={input}
-              maxLength={600}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder={STRINGS.chat.placeholder}
-              className="flex-1 px-4 py-2.5 text-xs sm:text-sm bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white text-slate-800"
-            />
-
-            <button
-              type="button"
-              onClick={handleVoiceInput}
-              title="Voice Input (Hindi / English)"
-              className={`p-2.5 rounded-xl border transition-colors ${
-                isListening
-                  ? 'bg-rose-500 text-white border-rose-500 animate-pulse'
-                  : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
-              }`}
-            >
-              <MicIcon className="w-4 h-4" />
-            </button>
-
-            <button
-              type="submit"
-              data-testid="chat-send"
-              disabled={isStreaming || !input.trim()}
-              className="px-4 py-2.5 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center gap-1"
-            >
-              <SendIcon className="w-4 h-4" />
-              <span className="hidden sm:inline">{STRINGS.chat.send}</span>
-            </button>
-          </form>
-
-          <p className="text-[10px] text-slate-400 text-center mt-2">
-            {STRINGS.app.disclaimerShort}
-          </p>
-        </div>
+        <ChatInputForm
+          input={input}
+          setInput={setInput}
+          isStreaming={isStreaming}
+          isListening={isListening}
+          onSend={handleSendMessage}
+          onVoiceInput={handleVoiceInput}
+        />
       </div>
     </div>
   );

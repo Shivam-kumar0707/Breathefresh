@@ -3,6 +3,17 @@ import type { Scenario } from './exposure';
 import type { ActionImpact } from './actions';
 import type { AirState } from '../data/airApi';
 
+/**
+ * Generates an instant, deterministic, rule-based daily air protection plan.
+ * Used whenever the remote LLM API is unavailable, times out, rate limits, or returns invalid schema.
+ * Constructs structured hourly timeline events, per-member vulnerability guidance, and localized headlines.
+ *
+ * @param scenario - The family schedule and building parameters.
+ * @param air - Live or snapshot air quality state with peak/cleanest window metrics.
+ * @param applicableImpacts - Evaluated actions sorted by exposure reduction.
+ * @param language - Target locale (en, hi, hinglish).
+ * @returns A fully validated DailyPlan with isFallback: true.
+ */
 export function generateRuleBasedPlan(
   scenario: Scenario,
   air: AirState,
@@ -73,13 +84,17 @@ export function generateRuleBasedPlan(
     const avoid: string[] = [];
 
     if (m.conditions.includes('asthma_copd')) {
-      tips.push('Keep emergency rescue inhaler accessible; remain in air-purified room during peak morning hours.');
+      tips.push(
+        'Keep emergency rescue inhaler accessible; remain in air-purified room during peak morning hours.'
+      );
       avoid.push('Avoid morning outdoor walking before 11:00 AM.');
     } else if (m.ageGroup === 'child') {
       tips.push('Engage in indoor creative play during after-school smog hours.');
       avoid.push('Avoid strenuous playground sports when AQI exceeds 200.');
     } else if (m.ageGroup === 'senior') {
-      tips.push('Hydrate with warm fluids; do gentle indoor stretching instead of early morning park walks.');
+      tips.push(
+        'Hydrate with warm fluids; do gentle indoor stretching instead of early morning park walks.'
+      );
       avoid.push('Avoid dry-brooming dust or burning incense in closed rooms.');
     } else {
       tips.push('Wear a well-fitted N95 mask on all outdoor errands and commutes.');

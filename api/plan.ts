@@ -32,7 +32,19 @@ const PlanInputSchema = z.object({
   grapStage: z.string().max(30).optional(),
 });
 
-export default async function handler(req: IncomingMessage & { body?: unknown }, res: ServerResponse) {
+/**
+ * Serverless API handler for /api/plan.
+ * Receives validated family air context and engine-computed action impacts, calls Groq (Qwen 3.8 / 27B)
+ * with strict temperature and JSON mode, validates the response against PlanOutputSchema,
+ * and falls back safely to signal fallback if Groq is unreachable, times out, or fails schema validation.
+ *
+ * @param req - Incoming HTTP request.
+ * @param res - Outgoing server response.
+ */
+export default async function handler(
+  req: IncomingMessage & { body?: unknown },
+  res: ServerResponse
+) {
   // CORS headers
   res.setHeader('Access-Control-Allow-Origin', GROQ_CONFIG.allowedOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -58,7 +70,12 @@ export default async function handler(req: IncomingMessage & { body?: unknown },
     res.statusCode = 429;
     res.setHeader('Content-Type', 'application/json');
     res.setHeader('Retry-After', String(rateCheck.resetInSec));
-    res.end(JSON.stringify({ error: 'Too many requests. Please wait a moment.', retryAfter: rateCheck.resetInSec }));
+    res.end(
+      JSON.stringify({
+        error: 'Too many requests. Please wait a moment.',
+        retryAfter: rateCheck.resetInSec,
+      })
+    );
     return;
   }
 
@@ -98,7 +115,9 @@ export default async function handler(req: IncomingMessage & { body?: unknown },
   if (!parsedInput.success) {
     res.statusCode = 400;
     res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify({ error: 'Invalid input payload', details: parsedInput.error.format() }));
+    res.end(
+      JSON.stringify({ error: 'Invalid input payload', details: parsedInput.error.format() })
+    );
     return;
   }
 

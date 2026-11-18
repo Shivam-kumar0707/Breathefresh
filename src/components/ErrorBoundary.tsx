@@ -33,11 +33,10 @@ export class ErrorBoundary extends Component<Props, State> {
               <AlertTriangleIcon className="w-6 h-6" />
             </div>
             <div className="space-y-1">
-              <h2 className="text-lg font-bold text-slate-900">
-                Something went wrong
-              </h2>
+              <h2 className="text-lg font-bold text-slate-900">Something went wrong</h2>
               <p className="text-xs text-slate-500">
-                BreatheFresh encountered an unexpected UI render error. Your profile data is safely saved in local storage.
+                BreatheFresh encountered an unexpected UI render error. Your profile data is safely
+                saved in local storage.
               </p>
             </div>
             <button

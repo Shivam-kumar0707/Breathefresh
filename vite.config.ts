@@ -34,7 +34,9 @@ function apiDevMiddleware(): Plugin {
           console.error('Error in local API handler:', err);
           res.statusCode = 500;
           res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify({ error: 'Internal API Server Error', details: (err as Error).message }));
+          res.end(
+            JSON.stringify({ error: 'Internal API Server Error', details: (err as Error).message })
+          );
           return;
         }
 
@@ -55,10 +57,7 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
-    plugins: [
-      react(),
-      apiDevMiddleware(),
-    ],
+    plugins: [react(), apiDevMiddleware()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
