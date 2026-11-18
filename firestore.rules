@@ -1,0 +1,22 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+    match /profiles/{id} {
+      allow get: if id.size() == 36;
+      allow create, update: if id.size() == 36 &&
+        request.resource.data.keys().hasOnly(['city','members','lifestyle','language','createdAt','updatedAt']);
+      allow list, delete: if false;
+    }
+    match /communities/{code} {
+      allow get: if true;
+      allow list, delete: if false;
+      allow create, update: if code.size() == 6 && request.resource.data.name is string
+        && request.resource.data.name.size() <= 60;
+      match /members/{id} {
+        allow get, list: if true;
+        allow create, update: if id.size() == 36 && request.resource.data.nick.size() <= 20;
+        allow delete: if false;
+      }
+    }
+  }
+}
