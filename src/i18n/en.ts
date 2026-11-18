@@ -12,7 +12,7 @@ export const STRINGS = {
     buildPlanBtn: 'Build my Air Plan',
     notMedicalAdvice: 'BreatheFresh provides exposure estimates and indoor planning tools based on published scientific models. It does not provide medical advice, diagnosis, or treatment.',
     disclaimerShort: 'Not medical advice. For persistent symptoms, consult a physician.',
-    evaluatorBadge: 'Evaluator-Ready · Deterministic Engine',
+    scienceBadge: 'Science-Backed · Deterministic Impact Engine',
   },
   nav: {
     home: 'Family Profile',

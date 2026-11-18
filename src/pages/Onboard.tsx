@@ -32,7 +32,7 @@ export const Onboard: React.FC = () => {
       <section className="text-center space-y-4 pt-2">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-teal-50 text-teal-800 border border-teal-200">
           <SparklesIcon className="w-3.5 h-3.5 text-teal-600" />
-          <span>{STRINGS.app.evaluatorBadge}</span>
+          <span>{STRINGS.app.scienceBadge}</span>
         </div>
 
         <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
@@ -74,7 +74,7 @@ export const Onboard: React.FC = () => {
       <section className="bg-slate-100/70 p-4 rounded-2xl border border-slate-200 space-y-2">
         <div className="flex items-center justify-between">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-            One-Tap Demo Personas (Evaluator Presets)
+            One-Tap Demo Personas (Sample Profiles)
           </span>
           <span className="text-xs text-slate-400">Zero config needed</span>
         </div>

@@ -52,7 +52,7 @@ export const Community: React.FC = () => {
         // ignore
       }
     } else {
-      // Default demo community for Ghaziabad/NCR evaluators
+      // Default demo community for Ghaziabad/NCR
       const demoComm: CommunityData = {
         code: 'GZB202',
         name: 'Ahinsa Khand Residents Clean Air Coalition',

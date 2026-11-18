@@ -514,7 +514,7 @@ export function smogOverride(scenario: Scenario, outdoorPm25: number): Scenario 
 
 /**
  * Compares a list of actions in isolation against the baseline scenario.
- * Evaluates delta in Exposure Index (EI %), cigarette equivalents, and weekly CO2e.
+ * Calculates delta in Exposure Index (EI %), cigarette equivalents, and weekly CO2e.
  * Pure function: baseline scenario is NOT modified.
  */
 export function compareActions(

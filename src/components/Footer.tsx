@@ -34,12 +34,12 @@ export const Footer: React.FC = () => {
           <p>{STRINGS.app.notMedicalAdvice}</p>
         </div>
 
-        {/* Evaluator Architecture & Privacy Note */}
+        {/* Privacy Note */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-[11px] text-slate-500">
           <p>
-            Evaluator Note: No authentication, login, or tracking cookies by design. Identity is an anonymous local UUID. Numbers generated deterministically by pure Impact Engine.
+            Privacy by Design: No accounts, login, or tracking cookies. Identity is an anonymous local ID. All exposure figures calculated deterministically.
           </p>
-          <span className="font-mono text-slate-400">v1.0 · Google GenAI Challenge</span>
+          <span className="font-mono text-slate-400">v1.0</span>
         </div>
       </div>
     </footer>
