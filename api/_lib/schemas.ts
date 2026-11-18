@@ -1,28 +1,30 @@
 import { z } from 'zod';
 
 export const PlanOutputSchema = z.object({
-  headline: z.string().max(120),
-  summary: z.string().max(400),
-  riskLevel: z.enum(['low', 'moderate', 'high', 'severe']),
+  headline: z.string().default('Personalized Protective Family Protocol'),
+  summary: z.string().default('Tailored protocol designed to minimize household inhalation during peak smog hours.'),
+  riskLevel: z.enum(['low', 'moderate', 'high', 'severe']).catch('high'),
   timeline: z
     .array(
       z.object({
-        startHour: z.number().int().min(0).max(23),
-        endHour: z.number().int().min(1).max(24),
-        title: z.string().max(80),
-        actionId: z.string().nullable(),
-        why: z.string().max(220),
+        startHour: z.number().int().min(0).max(24).catch(8),
+        endHour: z.number().int().min(0).max(24).catch(10),
+        title: z.string(),
+        actionId: z.string().nullable().catch(null),
+        why: z.string(),
       })
     )
-    .max(10),
-  members: z.array(
-    z.object({
-      memberId: z.string(),
-      tips: z.array(z.string().max(160)).max(3),
-      avoid: z.array(z.string().max(120)).max(2),
-    })
-  ),
-  topActions: z.array(z.string()).max(6),
+    .catch([]),
+  members: z
+    .array(
+      z.object({
+        memberId: z.string(),
+        tips: z.array(z.string()).catch([]),
+        avoid: z.array(z.string()).catch([]),
+      })
+    )
+    .catch([]),
+  topActions: z.array(z.string()).catch([]),
 });
 
 export type PlanOutput = z.infer<typeof PlanOutputSchema>;

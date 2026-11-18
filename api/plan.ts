@@ -107,7 +107,18 @@ ${JSON.stringify(input.applicableActions, null, 2)}`;
     }
 
     const groqJson = await groqRes.json();
-    const rawContent = groqJson.choices?.[0]?.message?.content || '{}';
+    let rawContent = groqJson.choices?.[0]?.message?.content || '{}';
+    rawContent = rawContent.trim();
+    if (rawContent.startsWith('```json')) {
+      rawContent = rawContent.slice(7);
+    } else if (rawContent.startsWith('```')) {
+      rawContent = rawContent.slice(3);
+    }
+    if (rawContent.endsWith('```')) {
+      rawContent = rawContent.slice(0, -3);
+    }
+    rawContent = rawContent.trim();
+
     const parsedJson = JSON.parse(rawContent);
 
     // Validate with Zod

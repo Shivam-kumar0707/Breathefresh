@@ -4,11 +4,21 @@
  */
 
 export const GROQ_CONFIG = {
-  apiKey: process.env.GROQ_API_KEY || '',
-  modelMain: process.env.GROQ_MODEL_MAIN || 'llama-3.3-70b-versatile',
-  modelFast: process.env.GROQ_MODEL_FAST || 'llama-3.1-8b-instant',
-  modelVision: process.env.GROQ_MODEL_VISION || 'meta-llama/llama-4-scout-17b-16e-instruct',
-  allowedOrigin: process.env.ALLOWED_ORIGIN || '*',
+  get apiKey() {
+    return process.env.GROQ_API_KEY || '';
+  },
+  get modelMain() {
+    return process.env.GROQ_MODEL_MAIN || 'qwen/qwen3.8-27b';
+  },
+  get modelFast() {
+    return process.env.GROQ_MODEL_FAST || 'qwen/qwen3.8-27b';
+  },
+  get modelVision() {
+    return process.env.GROQ_MODEL_VISION || 'meta-llama/llama-4-scout-17b-16e-instruct';
+  },
+  get allowedOrigin() {
+    return process.env.ALLOWED_ORIGIN || '*';
+  },
 };
 
 export interface ChatMessage {
