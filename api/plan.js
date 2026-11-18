@@ -38,31 +38,34 @@ import { z } from 'zod';
 import { callGroq, GROQ_CONFIG } from './_lib/groq';
 import { getPlanSystemPrompt } from './_lib/prompts';
 import { PlanOutputSchema } from './_lib/schemas';
+import { checkRateLimit, getClientIp } from './_lib/rateLimit';
 var PlanInputSchema = z.object({
     language: z.enum(['en', 'hi', 'hinglish']).default('en'),
-    city: z.string(),
+    city: z.string().min(1).max(100),
     aqiContext: z.object({
         aqi: z.number(),
         pm25: z.number(),
-        category: z.string(),
-        bestWindow: z.string(),
-        worstWindow: z.string(),
+        category: z.string().max(50),
+        bestWindow: z.string().max(50),
+        worstWindow: z.string().max(50),
     }),
-    profileSummary: z.string(),
-    applicableActions: z.array(z.object({
-        id: z.string(),
-        title: z.string(),
-        category: z.string(),
-        cost: z.string(),
+    profileSummary: z.string().min(1).max(500),
+    applicableActions: z
+        .array(z.object({
+        id: z.string().max(60),
+        title: z.string().max(120),
+        category: z.string().max(50),
+        cost: z.string().max(20),
         deltaEiPct: z.number(),
         deltaCigEq: z.number(),
         deltaCo2eKgWeek: z.number(),
-    })),
-    grapStage: z.string().optional(),
+    }))
+        .max(25),
+    grapStage: z.string().max(30).optional(),
 });
 export default function handler(req, res) {
     return __awaiter(this, void 0, void 0, function () {
-        var bodyData, parsedInput, input, systemPrompt, userContent, groqRes, groqJson, rawContent, parsedJson, validatedPlan, err_1;
+        var clientIp, rateCheck, bodyData, parsedInput, input, systemPrompt, userContent, groqRes, groqJson, rawContent, parsedJson, validatedPlan, err_1;
         var _a, _b, _c;
         return __generator(this, function (_d) {
             switch (_d.label) {
@@ -78,15 +81,35 @@ export default function handler(req, res) {
                     }
                     if (req.method !== 'POST') {
                         res.statusCode = 405;
+                        res.setHeader('Content-Type', 'application/json');
                         res.end(JSON.stringify({ error: 'Method Not Allowed' }));
+                        return [2 /*return*/];
+                    }
+                    clientIp = getClientIp(req);
+                    rateCheck = checkRateLimit(clientIp, 20, 60000);
+                    if (!rateCheck.allowed) {
+                        res.statusCode = 429;
+                        res.setHeader('Content-Type', 'application/json');
+                        res.setHeader('Retry-After', String(rateCheck.resetInSec));
+                        res.end(JSON.stringify({ error: 'Too many requests. Please wait a moment.', retryAfter: rateCheck.resetInSec }));
                         return [2 /*return*/];
                     }
                     bodyData = req.body;
                     if (!!bodyData) return [3 /*break*/, 2];
                     return [4 /*yield*/, new Promise(function (resolve) {
                             var data = '';
-                            req.on('data', function (chunk) { return (data += chunk); });
+                            var isTooLarge = false;
+                            req.on('data', function (chunk) {
+                                data += chunk;
+                                if (data.length > 10000) {
+                                    isTooLarge = true;
+                                }
+                            });
                             req.on('end', function () {
+                                if (isTooLarge) {
+                                    resolve({ __payloadTooLarge: true });
+                                    return;
+                                }
                                 try {
                                     resolve(JSON.parse(data));
                                 }
@@ -99,9 +122,16 @@ export default function handler(req, res) {
                     bodyData = _d.sent();
                     _d.label = 2;
                 case 2:
+                    if (bodyData && typeof bodyData === 'object' && '__payloadTooLarge' in bodyData) {
+                        res.statusCode = 400;
+                        res.setHeader('Content-Type', 'application/json');
+                        res.end(JSON.stringify({ error: 'Request payload too large (max 10KB)' }));
+                        return [2 /*return*/];
+                    }
                     parsedInput = PlanInputSchema.safeParse(bodyData);
                     if (!parsedInput.success) {
                         res.statusCode = 400;
+                        res.setHeader('Content-Type', 'application/json');
                         res.end(JSON.stringify({ error: 'Invalid input payload', details: parsedInput.error.format() }));
                         return [2 /*return*/];
                     }
@@ -137,6 +167,17 @@ export default function handler(req, res) {
                 case 5:
                     groqJson = _d.sent();
                     rawContent = ((_c = (_b = (_a = groqJson.choices) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b.message) === null || _c === void 0 ? void 0 : _c.content) || '{}';
+                    rawContent = rawContent.trim();
+                    if (rawContent.startsWith('```json')) {
+                        rawContent = rawContent.slice(7);
+                    }
+                    else if (rawContent.startsWith('```')) {
+                        rawContent = rawContent.slice(3);
+                    }
+                    if (rawContent.endsWith('```')) {
+                        rawContent = rawContent.slice(0, -3);
+                    }
+                    rawContent = rawContent.trim();
                     parsedJson = JSON.parse(rawContent);
                     validatedPlan = PlanOutputSchema.parse(parsedJson);
                     res.statusCode = 200;

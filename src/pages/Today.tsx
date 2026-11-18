@@ -218,11 +218,16 @@ export const Today: React.FC = () => {
       <HourlyChart />
 
       {/* Tabs: Plan Timeline / Indoor Hacks / Alternatives */}
-      <div className="flex border-b border-slate-200">
+      <div role="tablist" aria-label="Today's Plan Sections" className="flex border-b border-slate-200">
         <button
+          id="tab-plan"
+          role="tab"
+          aria-selected={activeTab === 'plan'}
+          aria-controls="panel-plan"
+          data-testid="tab-plan"
           type="button"
           onClick={() => setActiveTab('plan')}
-          className={`pb-3 px-5 text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
+          className={`pb-3 px-5 text-sm font-bold border-b-2 transition-all flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-teal-500 rounded-t-lg ${
             activeTab === 'plan'
               ? 'border-teal-600 text-teal-700'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -231,9 +236,14 @@ export const Today: React.FC = () => {
           <span>Daily Action Plan</span>
         </button>
         <button
+          id="tab-hacks"
+          role="tab"
+          aria-selected={activeTab === 'hacks'}
+          aria-controls="panel-hacks"
+          data-testid="tab-hacks"
           type="button"
           onClick={() => setActiveTab('hacks')}
-          className={`pb-3 px-5 text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
+          className={`pb-3 px-5 text-sm font-bold border-b-2 transition-all flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-teal-500 rounded-t-lg ${
             activeTab === 'hacks'
               ? 'border-teal-600 text-teal-700'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -242,9 +252,14 @@ export const Today: React.FC = () => {
           <span>Indoor Hacks & Calculator</span>
         </button>
         <button
+          id="tab-alternatives"
+          role="tab"
+          aria-selected={activeTab === 'alternatives'}
+          aria-controls="panel-alternatives"
+          data-testid="tab-alternatives"
           type="button"
           onClick={() => setActiveTab('alternatives')}
-          className={`pb-3 px-5 text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
+          className={`pb-3 px-5 text-sm font-bold border-b-2 transition-all flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-teal-500 rounded-t-lg ${
             activeTab === 'alternatives'
               ? 'border-teal-600 text-teal-700'
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -256,7 +271,7 @@ export const Today: React.FC = () => {
 
       {/* TAB CONTENT */}
       {activeTab === 'plan' && (
-        <div className="space-y-6">
+        <div id="panel-plan" role="tabpanel" aria-labelledby="tab-plan" className="space-y-6">
           {/* Plan Header */}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -314,8 +329,16 @@ export const Today: React.FC = () => {
         </div>
       )}
 
-      {activeTab === 'hacks' && <IndoorHacksTab />}
-      {activeTab === 'alternatives' && <AlternativesTab />}
+      {activeTab === 'hacks' && (
+        <div id="panel-hacks" role="tabpanel" aria-labelledby="tab-hacks">
+          <IndoorHacksTab />
+        </div>
+      )}
+      {activeTab === 'alternatives' && (
+        <div id="panel-alternatives" role="tabpanel" aria-labelledby="tab-alternatives">
+          <AlternativesTab />
+        </div>
+      )}
     </div>
   );
 };

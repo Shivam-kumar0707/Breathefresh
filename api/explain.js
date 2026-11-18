@@ -38,20 +38,21 @@ import { z } from 'zod';
 import { callGroq, GROQ_CONFIG } from './_lib/groq';
 import { getExplainSystemPrompt } from './_lib/prompts';
 import { ExplainOutputSchema } from './_lib/schemas';
+import { checkRateLimit, getClientIp } from './_lib/rateLimit';
 var ExplainInputSchema = z.object({
-    actionId: z.string(),
-    actionTitle: z.string(),
+    actionId: z.string().min(1).max(60),
+    actionTitle: z.string().min(1).max(120),
     deltas: z.object({
         deltaEiPct: z.number(),
         deltaCigEq: z.number(),
         deltaCo2eKgWeek: z.number(),
     }),
-    memberContext: z.string().optional(),
+    memberContext: z.string().max(300).optional(),
     language: z.enum(['en', 'hi', 'hinglish']).default('en'),
 });
 export default function handler(req, res) {
     return __awaiter(this, void 0, void 0, function () {
-        var bodyData, parsed, input, userContent, groqRes, json, parsedExplain, err_1;
+        var clientIp, rateCheck, bodyData, parsed, input, userContent, groqRes, json, parsedExplain, err_1;
         var _a, _b, _c, _d;
         return __generator(this, function (_e) {
             switch (_e.label) {
@@ -66,15 +67,35 @@ export default function handler(req, res) {
                     }
                     if (req.method !== 'POST') {
                         res.statusCode = 405;
+                        res.setHeader('Content-Type', 'application/json');
                         res.end(JSON.stringify({ error: 'Method Not Allowed' }));
+                        return [2 /*return*/];
+                    }
+                    clientIp = getClientIp(req);
+                    rateCheck = checkRateLimit(clientIp, 40, 60000);
+                    if (!rateCheck.allowed) {
+                        res.statusCode = 429;
+                        res.setHeader('Content-Type', 'application/json');
+                        res.setHeader('Retry-After', String(rateCheck.resetInSec));
+                        res.end(JSON.stringify({ error: 'Too many requests. Please wait a moment.', retryAfter: rateCheck.resetInSec }));
                         return [2 /*return*/];
                     }
                     bodyData = req.body;
                     if (!!bodyData) return [3 /*break*/, 2];
                     return [4 /*yield*/, new Promise(function (resolve) {
                             var data = '';
-                            req.on('data', function (chunk) { return (data += chunk); });
+                            var isTooLarge = false;
+                            req.on('data', function (chunk) {
+                                data += chunk;
+                                if (data.length > 5000) {
+                                    isTooLarge = true;
+                                }
+                            });
                             req.on('end', function () {
+                                if (isTooLarge) {
+                                    resolve({ __payloadTooLarge: true });
+                                    return;
+                                }
                                 try {
                                     resolve(JSON.parse(data));
                                 }
@@ -87,10 +108,17 @@ export default function handler(req, res) {
                     bodyData = _e.sent();
                     _e.label = 2;
                 case 2:
+                    if (bodyData && typeof bodyData === 'object' && '__payloadTooLarge' in bodyData) {
+                        res.statusCode = 400;
+                        res.setHeader('Content-Type', 'application/json');
+                        res.end(JSON.stringify({ error: 'Request payload too large (max 5KB)' }));
+                        return [2 /*return*/];
+                    }
                     parsed = ExplainInputSchema.safeParse(bodyData);
                     if (!parsed.success) {
                         res.statusCode = 400;
-                        res.end(JSON.stringify({ error: 'Invalid input payload' }));
+                        res.setHeader('Content-Type', 'application/json');
+                        res.end(JSON.stringify({ error: 'Invalid input payload', details: parsed.error.format() }));
                         return [2 /*return*/];
                     }
                     input = parsed.data;
@@ -133,12 +161,12 @@ export default function handler(req, res) {
                     return [3 /*break*/, 7];
                 case 6:
                     err_1 = _e.sent();
-                    console.warn('Explain failed, returning local fallback explanation:', err_1);
+                    console.warn('Groq /api/explain call failed, falling back:', err_1);
                     res.statusCode = 200;
                     res.setHeader('Content-Type', 'application/json');
                     res.end(JSON.stringify({
-                        explanation: "Adopting \"".concat(input.actionTitle, "\" reduces your household daily inhalation dose by ").concat(Math.abs(input.deltas.deltaEiPct), "%."),
-                        soWhat: 'Measurable scientific reduction in daily air pollution intake.',
+                        explanation: "Executing \"".concat(input.actionTitle, "\" reduces fine-particle lung deposition by ").concat(Math.abs(input.deltas.deltaEiPct), "%, saving ").concat(Math.abs(input.deltas.deltaCigEq), " cigarettes daily."),
+                        soWhat: 'Calculated directly by physical mass-balance aerosol modeling.',
                     }));
                     return [3 /*break*/, 7];
                 case 7: return [2 /*return*/];

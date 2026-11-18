@@ -1,6 +1,11 @@
 /**
  * Groq Models & Server Environment Configuration
- * Model IDs read strictly from environment variables.
+ *
+ * SECURITY NOTICE:
+ * - This module executes strictly in Node.js serverless functions (api/).
+ * - Never import this file into the client-side bundle (src/).
+ * - GROQ_API_KEY is read strictly from process.env and never exposed to the client.
+ * - Set ALLOWED_ORIGIN in production environment variables to lock down CORS.
  */
 var __assign = (this && this.__assign) || function () {
     __assign = Object.assign || function(t) {
@@ -50,11 +55,21 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 export var GROQ_CONFIG = {
-    apiKey: process.env.GROQ_API_KEY || '',
-    modelMain: process.env.GROQ_MODEL_MAIN || 'llama-3.3-70b-versatile',
-    modelFast: process.env.GROQ_MODEL_FAST || 'llama-3.1-8b-instant',
-    modelVision: process.env.GROQ_MODEL_VISION || 'meta-llama/llama-4-scout-17b-16e-instruct',
-    allowedOrigin: process.env.ALLOWED_ORIGIN || '*',
+    get apiKey() {
+        return process.env.GROQ_API_KEY || '';
+    },
+    get modelMain() {
+        return process.env.GROQ_MODEL_MAIN || 'qwen/qwen3.8-27b';
+    },
+    get modelFast() {
+        return process.env.GROQ_MODEL_FAST || 'qwen/qwen3.8-27b';
+    },
+    get modelVision() {
+        return process.env.GROQ_MODEL_VISION || 'meta-llama/llama-4-scout-17b-16e-instruct';
+    },
+    get allowedOrigin() {
+        return process.env.ALLOWED_ORIGIN || '*';
+    },
 };
 /**
  * Executes a call to Groq's OpenAI-compatible completions endpoint.

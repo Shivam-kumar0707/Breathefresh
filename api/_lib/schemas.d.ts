@@ -1,50 +1,50 @@
 import { z } from 'zod';
 export declare const PlanOutputSchema: z.ZodObject<{
-    headline: z.ZodString;
-    summary: z.ZodString;
-    riskLevel: z.ZodEnum<["low", "moderate", "high", "severe"]>;
-    timeline: z.ZodArray<z.ZodObject<{
-        startHour: z.ZodNumber;
-        endHour: z.ZodNumber;
+    headline: z.ZodDefault<z.ZodString>;
+    summary: z.ZodDefault<z.ZodString>;
+    riskLevel: z.ZodCatch<z.ZodEnum<["low", "moderate", "high", "severe"]>>;
+    timeline: z.ZodCatch<z.ZodArray<z.ZodObject<{
+        startHour: z.ZodCatch<z.ZodNumber>;
+        endHour: z.ZodCatch<z.ZodNumber>;
         title: z.ZodString;
-        actionId: z.ZodNullable<z.ZodString>;
+        actionId: z.ZodCatch<z.ZodNullable<z.ZodString>>;
         why: z.ZodString;
     }, "strip", z.ZodTypeAny, {
+        actionId: string | null;
+        title: string;
         startHour: number;
         endHour: number;
-        title: string;
-        actionId: string | null;
         why: string;
     }, {
-        startHour: number;
-        endHour: number;
         title: string;
-        actionId: string | null;
         why: string;
-    }>, "many">;
-    members: z.ZodArray<z.ZodObject<{
+        actionId?: unknown;
+        startHour?: unknown;
+        endHour?: unknown;
+    }>, "many">>;
+    members: z.ZodCatch<z.ZodArray<z.ZodObject<{
         memberId: z.ZodString;
-        tips: z.ZodArray<z.ZodString, "many">;
-        avoid: z.ZodArray<z.ZodString, "many">;
+        tips: z.ZodCatch<z.ZodArray<z.ZodString, "many">>;
+        avoid: z.ZodCatch<z.ZodArray<z.ZodString, "many">>;
     }, "strip", z.ZodTypeAny, {
         memberId: string;
         tips: string[];
         avoid: string[];
     }, {
         memberId: string;
-        tips: string[];
-        avoid: string[];
-    }>, "many">;
-    topActions: z.ZodArray<z.ZodString, "many">;
+        tips?: unknown;
+        avoid?: unknown;
+    }>, "many">>;
+    topActions: z.ZodCatch<z.ZodArray<z.ZodString, "many">>;
 }, "strip", z.ZodTypeAny, {
     headline: string;
     summary: string;
-    riskLevel: "low" | "moderate" | "high" | "severe";
+    riskLevel: "moderate" | "low" | "high" | "severe";
     timeline: {
+        actionId: string | null;
+        title: string;
         startHour: number;
         endHour: number;
-        title: string;
-        actionId: string | null;
         why: string;
     }[];
     members: {
@@ -54,22 +54,12 @@ export declare const PlanOutputSchema: z.ZodObject<{
     }[];
     topActions: string[];
 }, {
-    headline: string;
-    summary: string;
-    riskLevel: "low" | "moderate" | "high" | "severe";
-    timeline: {
-        startHour: number;
-        endHour: number;
-        title: string;
-        actionId: string | null;
-        why: string;
-    }[];
-    members: {
-        memberId: string;
-        tips: string[];
-        avoid: string[];
-    }[];
-    topActions: string[];
+    headline?: string | undefined;
+    summary?: string | undefined;
+    riskLevel?: unknown;
+    timeline?: unknown;
+    members?: unknown;
+    topActions?: unknown;
 }>;
 export type PlanOutput = z.infer<typeof PlanOutputSchema>;
 export declare const ExplainOutputSchema: z.ZodObject<{
@@ -91,11 +81,11 @@ export declare const VisionOutputSchema: z.ZodObject<{
         note: z.ZodString;
     }, "strip", z.ZodTypeAny, {
         type: string;
-        severity: "low" | "moderate" | "high";
+        severity: "moderate" | "low" | "high";
         note: string;
     }, {
         type: string;
-        severity: "low" | "moderate" | "high";
+        severity: "moderate" | "low" | "high";
         note: string;
     }>, "many">;
     purifierSpot: z.ZodString;
@@ -104,7 +94,7 @@ export declare const VisionOutputSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     issues: {
         type: string;
-        severity: "low" | "moderate" | "high";
+        severity: "moderate" | "low" | "high";
         note: string;
     }[];
     roomType: string;
@@ -114,7 +104,7 @@ export declare const VisionOutputSchema: z.ZodObject<{
 }, {
     issues: {
         type: string;
-        severity: "low" | "moderate" | "high";
+        severity: "moderate" | "low" | "high";
         note: string;
     }[];
     roomType: string;

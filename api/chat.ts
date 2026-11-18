@@ -1,16 +1,19 @@
 import type { IncomingMessage, ServerResponse } from 'http';
 import { z } from 'zod';
 import { callGroq, GROQ_CONFIG } from './_lib/groq';
-import { getChatSystemPrompt, hasRedFlagSymptoms } from './_lib/prompts';
+import { getChatSystemPrompt, hasRedFlagSymptoms, getDynamicChatFallback } from './_lib/prompts';
+import { checkRateLimit, getClientIp } from './_lib/rateLimit';
 
 const ChatInputSchema = z.object({
-  messages: z.array(
-    z.object({
-      role: z.enum(['user', 'assistant']),
-      content: z.string().max(600),
-    })
-  ).max(6),
-  contextPack: z.string(),
+  messages: z
+    .array(
+      z.object({
+        role: z.enum(['user', 'assistant']),
+        content: z.string().min(1).max(1000),
+      })
+    )
+    .max(8),
+  contextPack: z.string().max(3000),
   language: z.enum(['en', 'hi', 'hinglish']).default('en'),
 });
 
@@ -27,7 +30,19 @@ export default async function handler(req: IncomingMessage & { body?: unknown },
 
   if (req.method !== 'POST') {
     res.statusCode = 405;
+    res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify({ error: 'Method Not Allowed' }));
+    return;
+  }
+
+  // Per-IP rate limiting (30 requests/minute)
+  const clientIp = getClientIp(req);
+  const rateCheck = checkRateLimit(clientIp, 30, 60000);
+  if (!rateCheck.allowed) {
+    res.statusCode = 429;
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Retry-After', String(rateCheck.resetInSec));
+    res.end(JSON.stringify({ error: 'Too many requests. Please wait a moment.', retryAfter: rateCheck.resetInSec }));
     return;
   }
 
@@ -35,8 +50,18 @@ export default async function handler(req: IncomingMessage & { body?: unknown },
   if (!bodyData) {
     bodyData = await new Promise((resolve) => {
       let data = '';
-      req.on('data', (chunk) => (data += chunk));
+      let isTooLarge = false;
+      req.on('data', (chunk) => {
+        data += chunk;
+        if (data.length > 15000) {
+          isTooLarge = true;
+        }
+      });
       req.on('end', () => {
+        if (isTooLarge) {
+          resolve({ __payloadTooLarge: true });
+          return;
+        }
         try {
           resolve(JSON.parse(data));
         } catch {
@@ -46,10 +71,18 @@ export default async function handler(req: IncomingMessage & { body?: unknown },
     });
   }
 
+  if (bodyData && typeof bodyData === 'object' && '__payloadTooLarge' in bodyData) {
+    res.statusCode = 400;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ error: 'Request payload too large (max 15KB)' }));
+    return;
+  }
+
   const parsed = ChatInputSchema.safeParse(bodyData);
   if (!parsed.success) {
     res.statusCode = 400;
-    res.end(JSON.stringify({ error: 'Invalid chat payload' }));
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ error: 'Invalid chat payload', details: parsed.error.format() }));
     return;
   }
 
@@ -74,8 +107,7 @@ export default async function handler(req: IncomingMessage & { body?: unknown },
 
   // If no Groq key configured, stream rule-based assistant advice
   if (!GROQ_CONFIG.apiKey) {
-    const fallbackMsg =
-      "I'm operating in zero-config offline mode. Based on your current air quality, keep your windows closed during morning smog peaks, run your indoor purifier if available, and limit strenuous outdoor workouts until the cleaner afternoon window.";
+    const fallbackMsg = getDynamicChatFallback(lastUserMsg, contextPack, language);
     res.write(`data: ${JSON.stringify({ token: fallbackMsg })}\n\n`);
     res.write('data: [DONE]\n\n');
     res.end();
@@ -98,52 +130,88 @@ export default async function handler(req: IncomingMessage & { body?: unknown },
     });
 
     if (!groqRes.ok || !groqRes.body) {
-      throw new Error(`Groq stream failed with status ${groqRes.status}`);
+      throw new Error(`Groq returned ${groqRes.status}`);
     }
 
-    // Pipe SSE stream from Groq
-    const reader = groqRes.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
+    const bodyAny = groqRes.body as unknown as {
+      getReader?: () => ReadableStreamDefaultReader<Uint8Array>;
+      on?: (event: string, listener: (chunk: Buffer) => void) => void;
+    };
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+    if (typeof bodyAny?.getReader === 'function') {
+      const reader = bodyAny.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let streamBuffer = '';
 
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() ?? '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed || !trimmed.startsWith('data: ')) continue;
-        const dataStr = trimmed.slice(6);
-        if (dataStr === '[DONE]') {
-          res.write('data: [DONE]\n\n');
-          continue;
-        }
+        streamBuffer += decoder.decode(value, { stream: true });
+        const lines = streamBuffer.split('\n');
+        streamBuffer = lines.pop() ?? '';
 
-        try {
-          const parsedChunk = JSON.parse(dataStr);
-          const content = parsedChunk.choices?.[0]?.delta?.content || '';
-          if (content) {
-            res.write(`data: ${JSON.stringify({ token: content })}\n\n`);
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || !trimmed.startsWith('data: ')) continue;
+          const jsonStr = trimmed.slice(6);
+          if (jsonStr === '[DONE]') continue;
+
+          try {
+            const parsedChunk = JSON.parse(jsonStr);
+            const deltaToken = parsedChunk.choices?.[0]?.delta?.content;
+            if (deltaToken) {
+              res.write(`data: ${JSON.stringify({ token: deltaToken })}\n\n`);
+            }
+          } catch {
+            // ignore malformed SSE line
           }
-        } catch {
-          // ignore chunk parse errors
         }
       }
-    }
 
-    res.end();
+      res.write('data: [DONE]\n\n');
+      res.end();
+    } else if (typeof bodyAny?.on === 'function') {
+      let streamBuffer = '';
+      bodyAny.on('data', (chunk: Buffer) => {
+        streamBuffer += chunk.toString('utf-8');
+        const lines = streamBuffer.split('\n');
+        streamBuffer = lines.pop() ?? '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || !trimmed.startsWith('data: ')) continue;
+          const jsonStr = trimmed.slice(6);
+          if (jsonStr === '[DONE]') continue;
+
+          try {
+            const parsedChunk = JSON.parse(jsonStr);
+            const deltaToken = parsedChunk.choices?.[0]?.delta?.content;
+            if (deltaToken) {
+              res.write(`data: ${JSON.stringify({ token: deltaToken })}\n\n`);
+            }
+          } catch {
+            // ignore malformed SSE line
+          }
+        }
+      });
+
+      bodyAny.on('end', () => {
+        res.write('data: [DONE]\n\n');
+        res.end();
+      });
+
+      bodyAny.on('error', (err: unknown) => {
+        console.warn('Groq stream error:', err);
+        res.end();
+      });
+    } else {
+      throw new Error('Unsupported response body stream type from fetch');
+    }
   } catch (err) {
-    console.warn('Chat stream encountered error:', err);
-    res.write(
-      `data: ${JSON.stringify({
-        token:
-          'Our AI server is momentarily busy. Please keep windows sealed and wear an N95 mask outdoors.',
-      })}\n\n`
-    );
+    console.warn('Groq chat call failed, streaming fallback:', err);
+    const errorFallback = getDynamicChatFallback(lastUserMsg, contextPack, language);
+    res.write(`data: ${JSON.stringify({ token: errorFallback })}\n\n`);
     res.write('data: [DONE]\n\n');
     res.end();
   }

@@ -1,6 +1,11 @@
 /**
  * Groq Models & Server Environment Configuration
- * Model IDs read strictly from environment variables.
+ *
+ * SECURITY NOTICE:
+ * - This module executes strictly in Node.js serverless functions (api/).
+ * - Never import this file into the client-side bundle (src/).
+ * - GROQ_API_KEY is read strictly from process.env and never exposed to the client.
+ * - Set ALLOWED_ORIGIN in production environment variables to lock down CORS.
  */
 
 export const GROQ_CONFIG = {

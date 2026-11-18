@@ -3,16 +3,17 @@ import { z } from 'zod';
 import { callGroq, GROQ_CONFIG } from './_lib/groq';
 import { getExplainSystemPrompt } from './_lib/prompts';
 import { ExplainOutputSchema } from './_lib/schemas';
+import { checkRateLimit, getClientIp } from './_lib/rateLimit';
 
 const ExplainInputSchema = z.object({
-  actionId: z.string(),
-  actionTitle: z.string(),
+  actionId: z.string().min(1).max(60),
+  actionTitle: z.string().min(1).max(120),
   deltas: z.object({
     deltaEiPct: z.number(),
     deltaCigEq: z.number(),
     deltaCo2eKgWeek: z.number(),
   }),
-  memberContext: z.string().optional(),
+  memberContext: z.string().max(300).optional(),
   language: z.enum(['en', 'hi', 'hinglish']).default('en'),
 });
 
@@ -29,7 +30,19 @@ export default async function handler(req: IncomingMessage & { body?: unknown },
 
   if (req.method !== 'POST') {
     res.statusCode = 405;
+    res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify({ error: 'Method Not Allowed' }));
+    return;
+  }
+
+  // Rate limit: 40 explain requests per minute per IP
+  const clientIp = getClientIp(req);
+  const rateCheck = checkRateLimit(clientIp, 40, 60000);
+  if (!rateCheck.allowed) {
+    res.statusCode = 429;
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Retry-After', String(rateCheck.resetInSec));
+    res.end(JSON.stringify({ error: 'Too many requests. Please wait a moment.', retryAfter: rateCheck.resetInSec }));
     return;
   }
 
@@ -37,8 +50,18 @@ export default async function handler(req: IncomingMessage & { body?: unknown },
   if (!bodyData) {
     bodyData = await new Promise((resolve) => {
       let data = '';
-      req.on('data', (chunk) => (data += chunk));
+      let isTooLarge = false;
+      req.on('data', (chunk) => {
+        data += chunk;
+        if (data.length > 5000) {
+          isTooLarge = true;
+        }
+      });
       req.on('end', () => {
+        if (isTooLarge) {
+          resolve({ __payloadTooLarge: true });
+          return;
+        }
         try {
           resolve(JSON.parse(data));
         } catch {
@@ -48,10 +71,18 @@ export default async function handler(req: IncomingMessage & { body?: unknown },
     });
   }
 
+  if (bodyData && typeof bodyData === 'object' && '__payloadTooLarge' in bodyData) {
+    res.statusCode = 400;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ error: 'Request payload too large (max 5KB)' }));
+    return;
+  }
+
   const parsed = ExplainInputSchema.safeParse(bodyData);
   if (!parsed.success) {
     res.statusCode = 400;
-    res.end(JSON.stringify({ error: 'Invalid input payload' }));
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ error: 'Invalid input payload', details: parsed.error.format() }));
     return;
   }
 
@@ -102,15 +133,15 @@ CONTEXT: ${input.memberContext ?? 'General family protection'}`;
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify(parsedExplain));
   } catch (err) {
-    console.warn('Explain failed, returning local fallback explanation:', err);
+    console.warn('Groq /api/explain call failed, falling back:', err);
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
     res.end(
       JSON.stringify({
-        explanation: `Adopting "${input.actionTitle}" reduces your household daily inhalation dose by ${Math.abs(
+        explanation: `Executing "${input.actionTitle}" reduces fine-particle lung deposition by ${Math.abs(
           input.deltas.deltaEiPct
-        )}%.`,
-        soWhat: 'Measurable scientific reduction in daily air pollution intake.',
+        )}%, saving ${Math.abs(input.deltas.deltaCigEq)} cigarettes daily.`,
+        soWhat: 'Calculated directly by physical mass-balance aerosol modeling.',
       })
     );
   }

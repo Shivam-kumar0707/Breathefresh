@@ -37,12 +37,13 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 import { z } from 'zod';
 import { callGroq, GROQ_CONFIG } from './_lib/groq';
 import { VisionOutputSchema } from './_lib/schemas';
+import { checkRateLimit, getClientIp } from './_lib/rateLimit';
 var VisionInputSchema = z.object({
-    imageBase64: z.string().max(2000000), // ~1.5MB base64
+    imageBase64: z.string().min(10).max(2800000), // ~2MB raw image
 });
 export default function handler(req, res) {
     return __awaiter(this, void 0, void 0, function () {
-        var bodyData, parsed, fallbackVisionResponse, groqRes, data, validated, err_1;
+        var clientIp, rateCheck, bodyData, parsed, fallbackVisionResponse, groqRes, groqJson, rawContent, parsedVision, err_1;
         var _a, _b, _c;
         return __generator(this, function (_d) {
             switch (_d.label) {
@@ -57,15 +58,35 @@ export default function handler(req, res) {
                     }
                     if (req.method !== 'POST') {
                         res.statusCode = 405;
+                        res.setHeader('Content-Type', 'application/json');
                         res.end(JSON.stringify({ error: 'Method Not Allowed' }));
+                        return [2 /*return*/];
+                    }
+                    clientIp = getClientIp(req);
+                    rateCheck = checkRateLimit(clientIp, 10, 60000);
+                    if (!rateCheck.allowed) {
+                        res.statusCode = 429;
+                        res.setHeader('Content-Type', 'application/json');
+                        res.setHeader('Retry-After', String(rateCheck.resetInSec));
+                        res.end(JSON.stringify({ error: 'Too many image scan requests. Please wait a moment.', retryAfter: rateCheck.resetInSec }));
                         return [2 /*return*/];
                     }
                     bodyData = req.body;
                     if (!!bodyData) return [3 /*break*/, 2];
                     return [4 /*yield*/, new Promise(function (resolve) {
                             var data = '';
-                            req.on('data', function (chunk) { return (data += chunk); });
+                            var isTooLarge = false;
+                            req.on('data', function (chunk) {
+                                data += chunk;
+                                if (data.length > 3000000) {
+                                    isTooLarge = true;
+                                }
+                            });
                             req.on('end', function () {
+                                if (isTooLarge) {
+                                    resolve({ __payloadTooLarge: true });
+                                    return;
+                                }
                                 try {
                                     resolve(JSON.parse(data));
                                 }
@@ -78,10 +99,17 @@ export default function handler(req, res) {
                     bodyData = _d.sent();
                     _d.label = 2;
                 case 2:
+                    if (bodyData && typeof bodyData === 'object' && '__payloadTooLarge' in bodyData) {
+                        res.statusCode = 400;
+                        res.setHeader('Content-Type', 'application/json');
+                        res.end(JSON.stringify({ error: 'Image too large (max 2 MB)' }));
+                        return [2 /*return*/];
+                    }
                     parsed = VisionInputSchema.safeParse(bodyData);
                     if (!parsed.success) {
                         res.statusCode = 400;
-                        res.end(JSON.stringify({ error: 'Invalid vision payload' }));
+                        res.setHeader('Content-Type', 'application/json');
+                        res.end(JSON.stringify({ error: 'Invalid vision payload', details: parsed.error.format() }));
                         return [2 /*return*/];
                     }
                     fallbackVisionResponse = {
@@ -137,19 +165,20 @@ export default function handler(req, res) {
                 case 4:
                     groqRes = _d.sent();
                     if (!groqRes.ok) {
-                        throw new Error("Groq vision returned ".concat(groqRes.status));
+                        throw new Error("Vision API returned ".concat(groqRes.status));
                     }
                     return [4 /*yield*/, groqRes.json()];
                 case 5:
-                    data = _d.sent();
-                    validated = VisionOutputSchema.parse(JSON.parse(((_c = (_b = (_a = data.choices) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b.message) === null || _c === void 0 ? void 0 : _c.content) || '{}'));
+                    groqJson = _d.sent();
+                    rawContent = ((_c = (_b = (_a = groqJson.choices) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b.message) === null || _c === void 0 ? void 0 : _c.content) || '{}';
+                    parsedVision = VisionOutputSchema.parse(JSON.parse(rawContent));
                     res.statusCode = 200;
                     res.setHeader('Content-Type', 'application/json');
-                    res.end(JSON.stringify(validated));
+                    res.end(JSON.stringify(parsedVision));
                     return [3 /*break*/, 7];
                 case 6:
                     err_1 = _d.sent();
-                    console.warn('Groq vision failed or model unavailable, using fallback diagnosis:', err_1);
+                    console.warn('Vision analysis failed, returning rule-based recommendation:', err_1);
                     res.statusCode = 200;
                     res.setHeader('Content-Type', 'application/json');
                     res.end(JSON.stringify(fallbackVisionResponse));

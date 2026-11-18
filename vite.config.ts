@@ -68,5 +68,23 @@ export default defineConfig(({ mode }) => {
       port: 5173,
       host: true,
     },
+    build: {
+      chunkSizeWarningLimit: 600,
+      rollupOptions: {
+        output: {
+          manualChunks(id: string) {
+            if (id.includes('node_modules')) {
+              if (id.includes('recharts') || id.includes('d3-') || id.includes('victory-vendor')) {
+                return 'vendor-charts';
+              }
+              if (id.includes('firebase')) {
+                return 'vendor-firebase';
+              }
+              return 'vendor-core';
+            }
+          },
+        },
+      },
+    },
   };
 });

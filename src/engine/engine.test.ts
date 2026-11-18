@@ -1,9 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import { computeExposure, familyExposure, type Scenario } from './exposure';
 import { computeIndoorHour } from './indoor';
-import { compareActions } from './actions';
+import { compareActions, ACTION_CATALOG } from './actions';
 import { buildAllowedNumbers, validateTextNumbers, sanitizeTextWithNumberGuard } from './numberGuard';
 import { DEMO_PERSONAS } from '../data/personas';
+import { generateRuleBasedPlan } from './plannerFallback';
+import { processAirData, type AirState, type RawAirData } from '../data/airApi';
+import { calculateNaqi } from './naqi';
+import { estimateGrapStage } from './grap';
+import { computeEmissions } from './emissions';
+import ghaziabadFallback from '../data/fallback/ghaziabad.json';
+import { getDynamicChatFallback, hasRedFlagSymptoms } from '../../api/_lib/prompts';
 
 describe('BreatheFresh Impact Engine', () => {
   const baseScenario: Scenario = {
@@ -187,5 +194,142 @@ describe('BreatheFresh Impact Engine', () => {
     const sanitized = sanitizeTextWithNumberGuard(invalidText, allowed, 'Impact verified by engine.');
     expect(sanitized).toContain('Impact verified by engine.');
     expect(sanitized).not.toContain('999');
+  });
+
+  // Test 8: compareActions immutability on Kraków coal-heating persona
+  it('compareActions preserves Kraków persona immutability', () => {
+    const krakow = DEMO_PERSONAS.find((p) => p.id === 'nowak-krakow')!;
+    expect(krakow).toBeDefined();
+
+    const cloneBefore = JSON.parse(JSON.stringify(krakow.scenario));
+    const impacts = compareActions(
+      krakow.scenario,
+      ['electric_heating_switch', 'no_indoor_heater_burning'],
+      krakow.lifestyle.cookingFuel,
+      krakow.lifestyle.heatingFuel
+    );
+
+    expect(impacts.length).toBe(2);
+    expect(krakow.scenario).toEqual(cloneBefore);
+    const heatingImpact = impacts.find((i) => i.id === 'electric_heating_switch');
+    expect(heatingImpact).toBeDefined();
+    expect(heatingImpact!.deltaCo2eKgWeek).toBeLessThan(0); // cuts emissions
+  });
+
+  // Test 9: Rule-based planner fallback produces valid DailyPlan with isFallback: true
+  it('generateRuleBasedPlan produces a structured plan with isFallback true and valid timeline', () => {
+    const sharma = DEMO_PERSONAS.find((p) => p.id === 'sharma-ghaziabad')!;
+    const mockAirState: AirState = {
+      current: { time: '2026-11-18T10:00:00Z', pm2_5: 220, pm10: 340, us_aqi: 270 },
+      naqi: {
+        aqi: 380,
+        category: 'Very Poor',
+        color: '#dc2626',
+        pm25SubIndex: 380,
+        pm10SubIndex: 290,
+        responsiblePollutant: 'PM2.5',
+      },
+      grapStage: estimateGrapStage(420),
+      isNcr: true,
+      bestWindow: { hour: 14, timeLabel: '14:00 – 16:00', pm25: 140, aqi: 190 },
+      worstWindow: { hour: 7, timeLabel: '07:00 – 09:00', pm25: 350, aqi: 410 },
+      inversionRisk: true,
+      hourlySeries: [],
+      today24hPm25: Array(24).fill(220),
+      forecastDays: [],
+      isSampleData: true,
+      dataSourceLabel: 'Sample Data (Offline Snapshot)',
+    };
+
+    const impacts = compareActions(sharma.scenario, ACTION_CATALOG.map((a) => a.id));
+    const plan = generateRuleBasedPlan(sharma.scenario, mockAirState, impacts, 'en');
+
+    expect(plan.isFallback).toBe(true);
+    expect(plan.timeline.length).toBeGreaterThanOrEqual(4);
+    expect(plan.topActions.length).toBeGreaterThan(0);
+    expect(plan.members.length).toBe(sharma.scenario.members.length);
+  });
+
+  // Test 10: Performance benchmark - 100 iterations of familyExposure take well under 100ms
+  it('Engine recompute performance: 100 iterations of familyExposure finish in < 100ms', () => {
+    const sharma = DEMO_PERSONAS.find((p) => p.id === 'sharma-ghaziabad')!;
+    const start = performance.now();
+    for (let i = 0; i < 100; i++) {
+      familyExposure(sharma.scenario);
+    }
+    const elapsed = performance.now() - start;
+
+    expect(elapsed).toBeLessThan(100); // 100 iterations in <100ms means <1ms per recompute!
+  });
+
+  // Test 11: Air API fallback processing correctly flags isSampleData and assigns label
+  it('processAirData correctly labels fallback snapshots as sample data', () => {
+    const airState = processAirData(ghaziabadFallback as RawAirData, 'Ghaziabad', true, true);
+    expect(airState.isSampleData).toBe(true);
+    expect(airState.dataSourceLabel).toContain('Sample Data');
+    expect(airState.current.pm2_5).toBeGreaterThan(0);
+    expect(airState.today24hPm25.length).toBe(24);
+  });
+
+  // Test 12: India NAQI sub-index calculation accuracy across CPCB breakpoints
+  it('calculateNaqi correctly maps concentrations to official CPCB categories', () => {
+    // Good: PM2.5 <= 30
+    const good = calculateNaqi(25, 40);
+    expect(good.category).toBe('Good');
+    expect(good.aqi).toBeLessThanOrEqual(50);
+
+    // Moderate: PM2.5 61-90
+    const moderate = calculateNaqi(75, 120);
+    expect(moderate.category).toBe('Moderate');
+    expect(moderate.aqi).toBeGreaterThanOrEqual(100);
+
+    // Severe: PM2.5 >= 250
+    const severe = calculateNaqi(300, 450);
+    expect(severe.category).toBe('Severe');
+    expect(severe.aqi).toBeGreaterThanOrEqual(400);
+  });
+
+  // Test 13: CAQM GRAP stage estimation for Delhi NCR
+  it('estimateGrapStage correctly identifies Stage I through Stage IV based on NAQI', () => {
+    expect(estimateGrapStage(210)?.stage).toBe('Stage I');
+    expect(estimateGrapStage(320)?.stage).toBe('Stage II');
+    expect(estimateGrapStage(415)?.stage).toBe('Stage III');
+    expect(estimateGrapStage(460)?.stage).toBe('Stage IV');
+    expect(estimateGrapStage(150)).toBeNull(); // Below 201: No GRAP stage
+  });
+
+  // Test 14: Fuel switch emissions calculation
+  it('computeEmissions calculates reductions from cooking and heating fuel transitions', () => {
+    const sharma = DEMO_PERSONAS.find((p) => p.id === 'sharma-ghaziabad')!;
+    const lpgEmissions = computeEmissions(sharma.scenario, 'lpg', 'none');
+    const inductionEmissions = computeEmissions(sharma.scenario, 'induction', 'none');
+
+    expect(inductionEmissions.cookingKgWeek).toBeLessThan(lpgEmissions.cookingKgWeek);
+    expect(inductionEmissions.totalCo2eKgWeek).toBeLessThan(lpgEmissions.totalCo2eKgWeek);
+  });
+
+  // Test 15: Chat dynamic fallback generates question-specific answers
+  it('getDynamicChatFallback generates question-specific answers for distinct user questions', () => {
+    // Window question
+    const windowAns = getDynamicChatFallback('Can I open windows for 20 minutes right now?', '', 'en');
+    expect(windowAns).toContain('windows');
+    expect(windowAns).toContain('1:00 PM');
+
+    // Dadaji morning walk question (Hinglish)
+    const dadajiAns = getDynamicChatFallback('Kya Dadaji subah walk par ja sakte hain?', '', 'hinglish');
+    expect(dadajiAns.toLowerCase()).toContain('dadaji');
+    expect(dadajiAns.toLowerCase()).toContain('walk');
+
+    // Mask / commute question
+    const maskAns = getDynamicChatFallback('Should I wear a mask to office?', '', 'en');
+    expect(maskAns).toContain('N95');
+
+    // Purifier question
+    const purifierAns = getDynamicChatFallback('Where should I keep my purifier?', '', 'en');
+    expect(purifierAns).toContain('purifier');
+
+    // Red flag symptom detection
+    expect(hasRedFlagSymptoms('I have severe chest pain and cannot breathe')).toBe(true);
+    expect(hasRedFlagSymptoms('Can I open the window today?')).toBe(false);
   });
 });

@@ -25,6 +25,7 @@ export const AirPanel: React.FC = () => {
 
   return (
     <section
+      data-testid="air-panel"
       aria-label="Current Air Quality and Health Risk Panel"
       className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200 space-y-5"
     >
@@ -32,6 +33,7 @@ export const AirPanel: React.FC = () => {
       {isSampleData && (
         <div
           role="status"
+          data-testid="sample-data-badge"
           className="flex items-center gap-2 p-3 text-xs sm:text-sm font-medium bg-amber-50 text-amber-900 border border-amber-200 rounded-xl"
         >
           <AlertTriangleIcon className="w-4 h-4 text-amber-600 flex-shrink-0" />
@@ -78,12 +80,18 @@ export const AirPanel: React.FC = () => {
           <div className="mt-2 flex items-baseline gap-1.5">
             <span
               data-testid="aqi-value"
+              data-naqi-value
+              id="naqi-number-display"
               className="text-3xl sm:text-4xl font-extrabold tracking-tight"
               style={{ color: naqi.color }}
             >
               {naqi.aqi}
             </span>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded text-white" style={{ backgroundColor: naqi.color }}>
+            <span
+              data-testid="naqi-category"
+              className="text-xs font-semibold px-2 py-0.5 rounded text-white"
+              style={{ backgroundColor: naqi.color }}
+            >
               {naqi.category}
             </span>
           </div>

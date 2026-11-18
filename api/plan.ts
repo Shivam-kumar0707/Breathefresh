@@ -3,30 +3,33 @@ import { z } from 'zod';
 import { callGroq, GROQ_CONFIG } from './_lib/groq';
 import { getPlanSystemPrompt } from './_lib/prompts';
 import { PlanOutputSchema } from './_lib/schemas';
+import { checkRateLimit, getClientIp } from './_lib/rateLimit';
 
 const PlanInputSchema = z.object({
   language: z.enum(['en', 'hi', 'hinglish']).default('en'),
-  city: z.string(),
+  city: z.string().min(1).max(100),
   aqiContext: z.object({
     aqi: z.number(),
     pm25: z.number(),
-    category: z.string(),
-    bestWindow: z.string(),
-    worstWindow: z.string(),
+    category: z.string().max(50),
+    bestWindow: z.string().max(50),
+    worstWindow: z.string().max(50),
   }),
-  profileSummary: z.string(),
-  applicableActions: z.array(
-    z.object({
-      id: z.string(),
-      title: z.string(),
-      category: z.string(),
-      cost: z.string(),
-      deltaEiPct: z.number(),
-      deltaCigEq: z.number(),
-      deltaCo2eKgWeek: z.number(),
-    })
-  ),
-  grapStage: z.string().optional(),
+  profileSummary: z.string().min(1).max(500),
+  applicableActions: z
+    .array(
+      z.object({
+        id: z.string().max(60),
+        title: z.string().max(120),
+        category: z.string().max(50),
+        cost: z.string().max(20),
+        deltaEiPct: z.number(),
+        deltaCigEq: z.number(),
+        deltaCo2eKgWeek: z.number(),
+      })
+    )
+    .max(25),
+  grapStage: z.string().max(30).optional(),
 });
 
 export default async function handler(req: IncomingMessage & { body?: unknown }, res: ServerResponse) {
@@ -43,7 +46,19 @@ export default async function handler(req: IncomingMessage & { body?: unknown },
 
   if (req.method !== 'POST') {
     res.statusCode = 405;
+    res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify({ error: 'Method Not Allowed' }));
+    return;
+  }
+
+  // Per-IP rate limiting (20 requests/minute)
+  const clientIp = getClientIp(req);
+  const rateCheck = checkRateLimit(clientIp, 20, 60000);
+  if (!rateCheck.allowed) {
+    res.statusCode = 429;
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Retry-After', String(rateCheck.resetInSec));
+    res.end(JSON.stringify({ error: 'Too many requests. Please wait a moment.', retryAfter: rateCheck.resetInSec }));
     return;
   }
 
@@ -51,8 +66,18 @@ export default async function handler(req: IncomingMessage & { body?: unknown },
   if (!bodyData) {
     bodyData = await new Promise((resolve) => {
       let data = '';
-      req.on('data', (chunk) => (data += chunk));
+      let isTooLarge = false;
+      req.on('data', (chunk) => {
+        data += chunk;
+        if (data.length > 10000) {
+          isTooLarge = true;
+        }
+      });
       req.on('end', () => {
+        if (isTooLarge) {
+          resolve({ __payloadTooLarge: true });
+          return;
+        }
         try {
           resolve(JSON.parse(data));
         } catch {
@@ -62,9 +87,17 @@ export default async function handler(req: IncomingMessage & { body?: unknown },
     });
   }
 
+  if (bodyData && typeof bodyData === 'object' && '__payloadTooLarge' in bodyData) {
+    res.statusCode = 400;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ error: 'Request payload too large (max 10KB)' }));
+    return;
+  }
+
   const parsedInput = PlanInputSchema.safeParse(bodyData);
   if (!parsedInput.success) {
     res.statusCode = 400;
+    res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify({ error: 'Invalid input payload', details: parsedInput.error.format() }));
     return;
   }
@@ -80,6 +113,7 @@ export default async function handler(req: IncomingMessage & { body?: unknown },
   }
 
   const systemPrompt = getPlanSystemPrompt(input.language);
+  // All user inputs are strictly passed in user role, never in system instructions
   const userContent = `CITY: ${input.city}
 CURRENT AIR: AQI ${input.aqiContext.aqi} (${input.aqiContext.category}), PM2.5 ${input.aqiContext.pm25} µg/m³
 CLEANEST WINDOW: ${input.aqiContext.bestWindow}

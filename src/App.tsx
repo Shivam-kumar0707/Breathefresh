@@ -45,9 +45,15 @@ export const App: React.FC = () => {
       <BrowserRouter>
         <TitleUpdater />
         <div className="min-h-screen flex flex-col bg-slate-50 font-sans text-slate-900 selection:bg-teal-200">
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-teal-700 focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:font-semibold focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-teal-400"
+          >
+            Skip to main content
+          </a>
           <Header />
 
-          <main className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 w-full">
+          <main id="main-content" className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 w-full">
             <Suspense
               fallback={
                 <div className="flex items-center justify-center min-h-[50vh]">
