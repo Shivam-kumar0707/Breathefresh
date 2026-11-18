@@ -1,18 +1,11 @@
 import React from 'react';
 import {
   ACH,
-  BREATHING,
   CIG_PM25,
-  COMMUTE_FACTOR,
   CONSTANT_DOCS,
-  CO2E_G_PER_PKM,
   DEPOSITION,
-  MASK,
   MIN_INDOOR_FRACTION,
   PENETRATION,
-  RISK_BAND_THRESHOLDS,
-  RISK_MULT,
-  SOURCE_ADD,
 } from '../engine/constants';
 import { STRINGS } from '../i18n/en';
 import { AlertTriangleIcon, ShieldIcon, SparklesIcon } from '../components/icons';
@@ -177,43 +170,6 @@ export const Method: React.FC = () => {
                 ))}
               </tbody>
             </table>
-          </div>
-        </div>
-      </section>
-
-      {/* Raw Constants Inspection */}
-      <section className="bg-slate-50 rounded-2xl p-5 border border-slate-200 space-y-3">
-        <h3 className="font-bold text-slate-900 text-sm">
-          Complete Tunable Lookup Tables:
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
-          <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-1">
-            <span className="font-bold text-teal-700">BREATHING Multipliers:</span>
-            <pre className="text-[11px] text-slate-700">{JSON.stringify(BREATHING, null, 2)}</pre>
-          </div>
-          <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-1">
-            <span className="font-bold text-teal-700">MASK Efficiencies:</span>
-            <pre className="text-[11px] text-slate-700">{JSON.stringify(MASK, null, 2)}</pre>
-          </div>
-          <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-1">
-            <span className="font-bold text-teal-700">COMMUTE_FACTOR:</span>
-            <pre className="text-[11px] text-slate-700">{JSON.stringify(COMMUTE_FACTOR, null, 2)}</pre>
-          </div>
-          <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-1">
-            <span className="font-bold text-teal-700">RISK_MULT (Multipliers):</span>
-            <pre className="text-[11px] text-slate-700">{JSON.stringify(RISK_MULT, null, 2)}</pre>
-          </div>
-          <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-1">
-            <span className="font-bold text-teal-700">CO2E_G_PER_PKM (g/pkm):</span>
-            <pre className="text-[11px] text-slate-700">{JSON.stringify(CO2E_G_PER_PKM, null, 2)}</pre>
-          </div>
-          <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-1">
-            <span className="font-bold text-teal-700">SOURCE_ADD (µg/m³ active):</span>
-            <pre className="text-[11px] text-slate-700">{JSON.stringify(SOURCE_ADD, null, 2)}</pre>
-          </div>
-          <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-1">
-            <span className="font-bold text-teal-700">RISK_BAND_THRESHOLDS:</span>
-            <pre className="text-[11px] text-slate-700">{JSON.stringify(RISK_BAND_THRESHOLDS, null, 2)}</pre>
           </div>
         </div>
       </section>
